@@ -1,0 +1,95 @@
+.home-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background: #f4f7fb;
+}
+
+.home-main {
+  flex: 1;
+}
+
+.welcome-section {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(90deg, #43e97b, #38f9d7);
+  color: #fff;
+}
+
+.welcome-section h1 {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+
+.welcome-section p {
+  font-size: 1.3rem;
+}
+
+/* Module sections */
+.module-section {
+  display: flex;
+  align-items: center;
+  padding: 60px 20px;
+  gap: 50px;
+}
+
+.module-section.reverse {
+  flex-direction: row-reverse;
+  background: #eef3f9;
+}
+
+.module-section.normal {
+  background: #ffffff;
+}
+
+.module-image img {
+  width: 250px;
+  max-width: 100%;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.module-text {
+  flex: 1;
+}
+
+.module-text h2 {
+  font-size: 2rem;
+  margin-bottom: 15px;
+  color: #2d2d2d;
+}
+
+.module-text p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #555;
+}
+
+.redirect-btn {
+  padding: 12px 25px;
+  background: #43e97b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.redirect-btn:hover {
+  background: #38f9d7;
+  transform: translateY(-3px);
+}
+
+/* Responsive */
+@media screen and (max-width: 900px) {
+  .module-section {
+    flex-direction: column !important;
+    text-align: center;
+  }
+
+  .module-image img {
+    margin-bottom: 20px;
+  }
+}

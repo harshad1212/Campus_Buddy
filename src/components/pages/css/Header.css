@@ -1,0 +1,48 @@
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 50px;
+  background: #43e97b;
+  background: linear-gradient(90deg, #43e97b, #38f9d7);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header .logo {
+  font-size: 1.8rem;
+  font-weight: bold;
+}
+
+.header nav ul {
+  display: flex;
+  list-style: none;
+  gap: 25px;
+  align-items: center;
+}
+
+.header nav ul li a {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s;
+}
+
+.header nav ul li a:hover {
+  color: #2d2d2d;
+}
+
+.login-btn {
+  padding: 8px 15px;
+  border-radius: 5px;
+  background: #ffffff60;
+  color: #38f9d7;
+  font-weight: bold;
+}
+
+.login-btn:hover {
+  background: #e0f7f1;
+  color: #43e97b;
+}
