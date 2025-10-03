@@ -7,12 +7,11 @@ import About from './components/pages/AboutUs';
 import Contact from './components/pages/ContactUs';
 import Register from './components/pages/Register';
 import ForgotPassword from './components/pages/ForgotPassword'; 
+import Resources from './components/pages/Resources';
 
 function App() {
   return (
     <Router>
-      
-       
       <Routes>
         <Route path="/" element={<Welcome />} />  {/* Root page */}
         <Route path="/login" element={<Login />} /> {/* Login page */}
@@ -21,6 +20,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/resources" element={<Resources />} />
       </Routes>
     </Router>
   );

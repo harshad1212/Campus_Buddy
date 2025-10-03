@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './css/Register.css';
 
 const Register = () => {
@@ -8,14 +8,20 @@ const Register = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const navigate = useNavigate(); // 👈 initialize navigation
+
   const handleRegister = (e) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    // Add registration logic here
+
+    // Add your actual registration logic here (API call, etc.)
     alert(`Registered with Email: ${email}`);
+
+    // After success redirect to home page
+    navigate('/Home'); // 👈 redirects to Home
   };
 
   return (
