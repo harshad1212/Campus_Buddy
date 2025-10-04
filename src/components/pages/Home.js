@@ -22,7 +22,7 @@ const Home = () => {
       title: 'Chat',
       description: 'Real-time 1-to-1 or group chats with students and teachers for seamless communication.',
       img: 'https://cdn-icons-png.flaticon.com/512/2462/2462719.png',
-      link: '/chat',
+      link: '/chat', // ✅ Now directly navigates to Chat page
     },
     {
       title: 'Study Groups',
