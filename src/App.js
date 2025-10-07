@@ -8,8 +8,9 @@ import About from './components/pages/AboutUs';
 import Contact from './components/pages/ContactUs';
 import Register from './components/pages/Register';
 import ChatPage from './components/pages/ChatPage';
-import Resources from './components/pages/Resources';
+import SeeResources from './components/pages/seeResources';
 import ForgotPassword from './components/pages/ForgotPassword';
+import UploadResources from './components/pages/uploadResources';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -25,7 +26,8 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/resources" element={<Resources />} />
+        <Route path="/see-resources" element={<SeeResources />} />
+        <Route path="/upload-resources" element={<UploadResources />} />
       </Routes>
     </Router>
   );

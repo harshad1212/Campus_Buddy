@@ -17,7 +17,21 @@ const Header = () => {
       <nav>
         <ul>
           <li><Link to="/home">Home</Link></li>
-          <li><Link to="/resources">Resources</Link></li>
+
+          {/* Dropdown for Resources */}
+          <li className="dropdown">
+            <button
+              className="dropbtn"
+              onClick={(e) => e.preventDefault()} // prevents navigation
+            >
+              Resources
+            </button>
+            <div className="dropdown-content">
+              <Link to="/upload-resources">Upload Resources</Link>
+              <Link to="/see-resources">See Resources</Link>
+            </div>
+          </li>
+
           <li><Link to="/events">Events</Link></li>
           <li><Link to="/chat">Chat</Link></li>
           <li><Link to="/study-groups">Study Groups</Link></li>
