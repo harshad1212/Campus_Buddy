@@ -27,9 +27,13 @@ const Login = ({ setCurrentUser }) => {
 
       // Save token to localStorage for future requests
       localStorage.setItem("token", data.token);
+      console.log("Current token:", data.token);
+
 
       // Update app state with logged-in user
-      setCurrentUser(data.user);
+      // After login success
+setCurrentUser({ ...data.user, token: data.token });
+
 
       // Redirect to home page
       navigate("/home", { replace: true });

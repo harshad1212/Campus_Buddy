@@ -1,124 +1,106 @@
 import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from 'react-router-dom';
-
 import UsersList from '../Sidebar/UserList';
+import RoomsList from '../Sidebar/RoomList';
 import ChatWindow from '../ChatWindow/ChatWindow';
 import OnlineStatus from '../Status/OnlineStatus';
-import TypingIndicator from '../TypingIndicator';
 import useSocket from '../../hooks/UseSocket';
-import RoomsList from '../Sidebar/RoomList';
 import { formatRelativeTime } from '../../utils/time';
 
-/* ChatRouter: renders ChatWindow based on route param or activeRoomId */
-const ChatRouter = ({ socket, currentUser, activeRoomId, setActiveRoomId }) => {
-  const params = useParams();
-  const roomId = params.roomId || activeRoomId;
+const ChatPage = ({ currentUser }) => {
+  // ✅ Use the socket hook
+  const socketHook = useSocket(currentUser);
+  const { socket, joinRoom } = socketHook;
 
-  useEffect(() => {
-    if (roomId) {
-      setActiveRoomId(roomId);
-      socket?.joinRoom(roomId);
-    }
-  }, [roomId, socket, setActiveRoomId]);
-
-  if (!roomId) {
-    return <div className="h-full flex items-center justify-center text-gray-500">Select a chat</div>;
-  }
-
-  return (
-    <ChatWindow
-      chatId={roomId}
-      socket={socket}
-      currentUser={currentUser}
-    />
-  );
-};
-
-ChatRouter.propTypes = {
-  socket: PropTypes.object,
-  currentUser: PropTypes.object.isRequired,
-  activeRoomId: PropTypes.string,
-  setActiveRoomId: PropTypes.func.isRequired,
-};
-
-/* ChatPageInner: main chat layout with sidebar, chat window, users list */
-const ChatPageInner = ({ currentUser }) => {
-  const socket = useSocket(currentUser);
   const [rooms, setRooms] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState(null);
-  const [typingUsers, setTypingUsers] = useState([]);
 
-  // Fetch initial data (replace with real API calls)
+  // Fetch rooms & users
   useEffect(() => {
     async function fetchInitialData() {
-      setRooms([]);
-      setUsers([]);
+      try {
+        const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
+
+        const roomsRes = await fetch(`${apiBase}/api/rooms`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        });
+        setRooms(await roomsRes.json());
+
+        const usersRes = await fetch(`${apiBase}/api/users`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        });
+        setUsers(await usersRes.json());
+      } catch (err) {
+        console.error('Failed to fetch initial data:', err);
+      }
     }
     fetchInitialData();
   }, [currentUser]);
 
-  // Socket event listeners
+  // Socket listeners
   useEffect(() => {
     if (!socket) return;
 
     const onRoomsUpdate = (updatedRoom) => {
-      setRooms(prev => {
-        const idx = prev.findIndex(r => r._id === updatedRoom._id);
+      setRooms((prev) => {
+        const idx = prev.findIndex((r) => r._id === updatedRoom._id);
         if (idx === -1) return [updatedRoom, ...prev];
         const copy = [...prev];
         copy[idx] = { ...copy[idx], ...updatedRoom };
-        return copy.sort((a,b)=> new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0));
+        return copy.sort(
+          (a, b) =>
+            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+        );
       });
     };
 
     const onUserList = (list) => setUsers(list);
 
-    const onPresence = ({ userId, online, lastSeen }) => {
-      setUsers(prev => prev.map(u => u._id === userId ? { ...u, online, lastSeen } : u));
-    };
-
-    const onTyping = (payload) => {
-      setTypingUsers(prev => {
-        if (payload.isTyping) {
-          const exists = prev.find(p => p.userId === payload.userId && p.chatId === payload.chatId);
-          if (exists) return prev;
-          return [...prev, { userId: payload.userId, name: payload.name, chatId: payload.chatId }];
-        } else {
-          return prev.filter(p => !(p.userId === payload.userId && p.chatId === payload.chatId));
-        }
-      });
-    };
+    const onPresence = ({ userId, online, lastSeen }) =>
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, online, lastSeen } : u))
+      );
 
     socket.on('room-upsert', onRoomsUpdate);
     socket.on('user-list', onUserList);
     socket.on('presence', onPresence);
-    socket.on('typing', onTyping);
 
     return () => {
       socket.off('room-upsert', onRoomsUpdate);
       socket.off('user-list', onUserList);
       socket.off('presence', onPresence);
-      socket.off('typing', onTyping);
     };
   }, [socket]);
 
-  const handleStartPrivateChat = async (user) => {
-    const fakeChat = {
-      _id: `dm-${currentUser._id}-${user._id}`,
-      isGroup: false,
-      name: user.name,
-      members: [currentUser._id, user._id],
-      lastMessage: null,
-      unreadCount: 0,
-    };
-    setRooms(prev => [fakeChat, ...prev.filter(r => r._id !== fakeChat._id)]);
-    setActiveRoomId(fakeChat._id);
-    socket?.joinRoom(fakeChat._id);
-  };
+  // Start private chat
+ const handleStartPrivateChat = async (user) => {
+  try {
+     const apiBase = process.env.REACT_APP_API_BASE_URL || 'http://localhost:4000';
 
-  const handleCreateRoom = async (roomName) => {
+    const res = await fetch(`${apiBase}/api/private`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentUser.token}`,
+      },
+      body: JSON.stringify({ targetId: user._id }),
+    });
+
+    const room = await res.json(); // This returns the real Room object
+
+    setRooms((prev) => [room, ...prev.filter((r) => r._id !== room._id)]);
+    setActiveRoomId(room._id);
+
+    socket?.joinRoom(room._id);
+  } catch (err) {
+    console.error("Failed to start private chat:", err);
+  }
+};
+
+
+  // Create group room
+  const handleCreateRoom = (roomName) => {
     const newRoom = {
       _id: `group-${Date.now()}`,
       name: roomName,
@@ -127,9 +109,9 @@ const ChatPageInner = ({ currentUser }) => {
       lastMessage: null,
       unreadCount: 0,
     };
-    setRooms(prev => [newRoom, ...prev]);
+    setRooms((prev) => [newRoom, ...prev]);
     setActiveRoomId(newRoom._id);
-    socket?.joinRoom(newRoom._id);
+    joinRoom(newRoom._id); // ✅ use joinRoom helper
   };
 
   return (
@@ -137,10 +119,16 @@ const ChatPageInner = ({ currentUser }) => {
       {/* Sidebar */}
       <aside className="w-80 bg-white border-r border-gray-200 flex flex-col">
         <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100">
-          <img src={currentUser.avatarUrl} alt={`${currentUser.name} avatar`} className="w-10 h-10 rounded-full object-cover" />
+          <img
+            src={currentUser.avatarUrl}
+            alt={currentUser.name}
+            className="w-10 h-10 rounded-full object-cover"
+          />
           <div>
             <div className="text-sm font-medium">{currentUser.name}</div>
-            <div className="text-xs text-gray-500"><OnlineStatus user={{...currentUser, online: true}} small /></div>
+            <div className="text-xs text-gray-500">
+              <OnlineStatus user={{ ...currentUser, online: true }} small />
+            </div>
           </div>
         </div>
 
@@ -148,72 +136,47 @@ const ChatPageInner = ({ currentUser }) => {
           <RoomsList
             rooms={rooms}
             activeRoomId={activeRoomId}
-            onSelectRoom={(id) => { setActiveRoomId(id); socket?.joinRoom(id); }}
+            onSelectRoom={(id) => {
+              setActiveRoomId(id);
+              joinRoom(id); // ✅ use helper
+            }}
             onCreateRoom={handleCreateRoom}
           />
         </div>
       </aside>
 
-      {/* Chat area */}
+      {/* Chat Window */}
       <main className="flex-1 flex flex-col">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-0">
-          <div className="md:col-span-3 flex flex-col bg-white">
-            <Routes>
-              <Route path="/chat/rooms/:roomId" element={
-                <ChatRouter
-                  socket={socket}
-                  currentUser={currentUser}
-                  activeRoomId={activeRoomId}
-                  setActiveRoomId={setActiveRoomId}
-                />
-              }/>
-              <Route path="/chat/user/:userId" element={
-                <ChatRouter
-                  socket={socket}
-                  currentUser={currentUser}
-                  activeRoomId={activeRoomId}
-                  setActiveRoomId={setActiveRoomId}
-                />
-              }/>
-              <Route path="/chat" element={
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  Select a room or a user to start chatting
-                </div>
-              }/>
-            </Routes>
+        {activeRoomId ? (
+          <ChatWindow
+            chatId={activeRoomId}
+            socket={socketHook} // ✅ pass the full hook object
+            currentUser={currentUser}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-500">
+            Select a room or user to start chatting
           </div>
-
-          {/* Users list */}
-          <aside className="hidden md:block md:col-span-1 border-l border-gray-200 bg-white">
-            <div className="px-4 py-3 border-b">
-              <h3 className="text-sm font-semibold">People</h3>
-              <p className="text-xs text-gray-500">Students & teachers</p>
-            </div>
-            <UsersList
-              users={users}
-              onStartPrivateChat={handleStartPrivateChat}
-            />
-            <div className="p-3 text-xs text-gray-400">
-              Last sync: {formatRelativeTime(new Date())}
-            </div>
-          </aside>
-        </div>
-
-        <div className="bg-gray-50 border-t border-gray-200 p-2">
-          <TypingIndicator typingUsers={typingUsers.filter(t => t.chatId === activeRoomId)} />
-        </div>
+        )}
       </main>
+
+      {/* Users List */}
+      <aside className="hidden md:flex md:flex-col w-72 border-l border-gray-200 bg-white">
+        <div className="px-4 py-3 border-b">
+          <h3 className="text-sm font-semibold">People</h3>
+          <p className="text-xs text-gray-500">Students & teachers</p>
+        </div>
+        <UsersList
+          users={users}
+          currentUserId={currentUser._id}
+          onStartPrivateChat={handleStartPrivateChat}
+        />
+        <div className="p-3 text-xs text-gray-400">
+          Last sync: {formatRelativeTime(new Date())}
+        </div>
+      </aside>
     </div>
   );
-};
-
-ChatPageInner.propTypes = {
-  currentUser: PropTypes.object.isRequired,
-};
-
-/* Main ChatPage export */
-const ChatPage = ({ currentUser }) => {
-  return <ChatPageInner currentUser={currentUser} />;
 };
 
 ChatPage.propTypes = {

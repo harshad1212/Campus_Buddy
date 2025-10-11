@@ -1,93 +1,78 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { io } from 'socket.io-client';
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { io } from "socket.io-client";
 
-/**
- * useSocket — custom hook to manage socket.io client lifecycle and helpers.
- *
- * Usage:
- *  const socket = useSocket(currentUser); // returns helper object with functions & raw socket
- *
- * Exposed helpers:
- *  - socket: raw socket instance
- *  - sendMessage(payload, ack)
- *  - joinRoom(roomId)
- *  - leaveRoom(roomId)
- *  - emitTyping({ chatId, isTyping })
- *  - on(event, handler)
- *  - off(event, handler)
- *
- * Note: The hook reads token from currentUser.token and connects to:
- *   `${process.env.REACT_APP_API_URL}/chat`
- *
- * Make sure to set REACT_APP_API_URL in your .env file.
- */
+const NAMESPACE = "/chat";
+const SOCKET_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
 export default function useSocket(currentUser) {
-  const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);
-
-  const namespace = '/chat';
-  const url = process.env.REACT_APP_API_URL || '';
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    if (!currentUser || !currentUser.token) return;
+    if (!currentUser?.token) return;
 
-    const s = io(`${url}${namespace}`, {
+    const socket = io(`${SOCKET_URL}${NAMESPACE}`, {
       auth: { token: currentUser.token },
-      transports: ['websocket'],
+      transports: ["websocket"],
       autoConnect: true,
     });
 
-    socketRef.current = s;
+    socketRef.current = socket;
 
-    s.on('connect', () => setConnected(true));
-    s.on('disconnect', () => setConnected(false));
+    const onConnect = () => setConnected(true);
+    const onDisconnect = () => setConnected(false);
 
-    // optional: on connect, request initial presence & userlist
-    s.on('connect', () => {
-      s.emit('fetch-user-list'); // server should reply with 'user-list'
-      s.emit('presence:subscribe'); // optional
-    });
+    socket.on("connect", onConnect);
+    socket.on("disconnect", onDisconnect);
+
+    // Fetch initial data
+    socket.emit("fetch-user-list");
+    socket.emit("presence:subscribe");
 
     return () => {
-      s.disconnect();
+      socket.off("connect", onConnect);
+      socket.off("disconnect", onDisconnect);
+      socket.disconnect();
       socketRef.current = null;
     };
-  }, [currentUser?.token, url]);
+  }, [currentUser?.token]);
 
-  const sendMessage = (payload, ack) => {
-    // payload should contain { chatId, content, attachments, clientTempId }
-    socketRef.current?.emit('send-message', payload, ack);
-  };
+  // Wrap emit functions safely
+  const sendMessage = useCallback((payload, ack) => {
+    socketRef.current?.emit("send-message", payload, ack);
+  }, []);
 
-  const joinRoom = (roomId) => {
-    socketRef.current?.emit('join-chat', roomId);
-  };
+  const joinRoom = useCallback((roomId) => {
+    socketRef.current?.emit("join-chat", roomId);
+  }, []);
 
-  const leaveRoom = (roomId) => {
-    socketRef.current?.emit('leave-chat', roomId);
-  };
+  const leaveRoom = useCallback((roomId) => {
+    socketRef.current?.emit("leave-chat", roomId);
+  }, []);
 
-  const emitTyping = ({ chatId, isTyping }) => {
-    socketRef.current?.emit('typing', { chatId, isTyping });
-  };
+  const emitTyping = useCallback(({ chatId, isTyping }) => {
+    socketRef.current?.emit("typing", { chatId, isTyping });
+  }, []);
 
-  const on = (event, handler) => {
+  const on = useCallback((event, handler) => {
     socketRef.current?.on(event, handler);
-  };
+  }, []);
 
-  const off = (event, handler) => {
+  const off = useCallback((event, handler) => {
     socketRef.current?.off(event, handler);
-  };
+  }, []);
 
-  return useMemo(() => ({
-    socket: socketRef.current,
-    connected,
-    sendMessage,
-    joinRoom,
-    leaveRoom,
-    emitTyping,
-    on,
-    off,
-  }), [connected]);
+  return useMemo(
+    () => ({
+      socket: socketRef.current, // raw socket (may be null initially)
+      connected,
+      sendMessage,
+      joinRoom,
+      leaveRoom,
+      emitTyping,
+      on,
+      off,
+    }),
+    [connected, sendMessage, joinRoom, leaveRoom, emitTyping, on, off]
+  );
 }
