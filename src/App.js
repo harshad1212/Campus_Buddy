@@ -9,7 +9,7 @@ import Contact from './components/pages/ContactUs';
 import Register from './components/pages/Register';
 import ForgotPassword from './components/pages/ForgotPassword';
 import ChatPage from './components/pages/ChatPage';
-
+import ResetPassword from './components/pages/ResetPassword';
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
@@ -25,6 +25,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
       </Routes>
     </Router>
   );
