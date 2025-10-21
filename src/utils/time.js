@@ -4,20 +4,28 @@
  * - formatAbsolute(Date) -> locale string
  */
 
-export function formatRelativeTime(date) {
-  if (!date) return '';
-  const d = new Date(date);
+export const formatMessageTime = (date) => {
   const now = new Date();
-  const diff = Math.floor((now - d) / 1000); // seconds
-  if (diff < 10) return 'just now';
-  if (diff < 60) return `${diff}s ago`;
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  if (now.toDateString() === d.toDateString()) {
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
-  return d.toLocaleDateString();
-}
+  const isToday = date.toDateString() === now.toDateString();
+
+  const yesterday = new Date();
+  yesterday.setDate(now.getDate() - 1);
+  const isYesterday = date.toDateString() === yesterday.toDateString();
+
+  const timeString = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  if (isToday) return timeString;
+  if (isYesterday) return `Yesterday, ${timeString}`;
+  return (
+    date.toLocaleDateString([], {
+      month: "short",
+      day: "numeric",
+    }) + `, ${timeString}`
+  );
+};
 
 export function formatAbsolute(date) {
   if (!date) return '';
