@@ -1,219 +1,193 @@
-import React, { useEffect, useState } from 'react';
-import PropTypes from 'prop-types';
-import { BrowserRouter as Router, Routes, Route, useParams, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import PropTypes from "prop-types";
+import UsersList from "../Sidebar/UserList";
+import ChatWindow from "../ChatWindow/ChatWindow";
+import OnlineStatus from "../Status/OnlineStatus";
+import useSocket from "../../hooks/UseSocket";
+import { formatMessageTime } from "../../utils/time";
 
-import UsersList from '../Sidebar/UserList';
-import ChatWindow from '../ChatWindow/ChatWindow';
-import OnlineStatus from '../Status/OnlineStatus';
-import TypingIndicator from '../TypingIndicator';
-import useSocket from '../../hooks/UseSocket';
-import RoomsList from '../Sidebar/RoomList';
-import { formatRelativeTime } from '../../utils/time';
+const ChatPage = ({ currentUser }) => {
+  const socketHook = useSocket(currentUser);
+  const { socket, joinRoom } = socketHook;
 
-/* ChatRouter: renders ChatWindow based on route param or activeRoomId */
-const ChatRouter = ({ socket, currentUser, activeRoomId, setActiveRoomId }) => {
-  const params = useParams();
-  const roomId = params.roomId || activeRoomId;
-
-  useEffect(() => {
-    if (roomId) {
-      setActiveRoomId(roomId);
-      socket?.joinRoom(roomId);
-    }
-  }, [roomId, socket, setActiveRoomId]);
-
-  if (!roomId) {
-    return <div className="h-full flex items-center justify-center text-gray-500">Select a chat</div>;
-  }
-
-  return (
-    <ChatWindow
-      chatId={roomId}
-      socket={socket}
-      currentUser={currentUser}
-    />
-  );
-};
-
-ChatRouter.propTypes = {
-  socket: PropTypes.object,
-  currentUser: PropTypes.object.isRequired,
-  activeRoomId: PropTypes.string,
-  setActiveRoomId: PropTypes.func.isRequired,
-};
-
-/* ChatPageInner: main chat layout with sidebar, chat window, users list */
-const ChatPageInner = ({ currentUser }) => {
-  const socket = useSocket(currentUser);
   const [rooms, setRooms] = useState([]);
   const [users, setUsers] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState(null);
-  const [typingUsers, setTypingUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // Fetch initial data (replace with real API calls)
+  // Fetch initial data
   useEffect(() => {
     async function fetchInitialData() {
-      setRooms([]);
-      setUsers([]);
+      try {
+        const apiBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+        const [roomsRes, usersRes] = await Promise.all([
+          fetch(`${apiBase}/api/rooms`, {
+            headers: { Authorization: `Bearer ${currentUser.token}` },
+          }),
+          fetch(`${apiBase}/api/users`, {
+            headers: { Authorization: `Bearer ${currentUser.token}` },
+          }),
+        ]);
+
+        const roomsData = await roomsRes.json();
+        const usersData = await usersRes.json();
+        setRooms(roomsData);
+        setUsers(usersData.map((u) => ({ ...u, unreadCount: 0 })));
+      } catch (err) {
+        console.error("Failed to fetch initial data:", err);
+      }
     }
     fetchInitialData();
   }, [currentUser]);
 
-  // Socket event listeners
+  // Socket listeners
   useEffect(() => {
     if (!socket) return;
 
     const onRoomsUpdate = (updatedRoom) => {
-      setRooms(prev => {
-        const idx = prev.findIndex(r => r._id === updatedRoom._id);
+      setRooms((prev) => {
+        const idx = prev.findIndex((r) => r._id === updatedRoom._id);
         if (idx === -1) return [updatedRoom, ...prev];
         const copy = [...prev];
         copy[idx] = { ...copy[idx], ...updatedRoom };
-        return copy.sort((a,b)=> new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0));
+        return copy.sort(
+          (a, b) =>
+            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+        );
       });
     };
 
-    const onUserList = (list) => setUsers(list);
-
-    const onPresence = ({ userId, online, lastSeen }) => {
-      setUsers(prev => prev.map(u => u._id === userId ? { ...u, online, lastSeen } : u));
+    const onUserList = (list) => {
+      const uniqueUsers = Array.from(new Map(list.map((u) => [u._id, u])).values());
+      setUsers((prev) =>
+        uniqueUsers.map((u) => {
+          const existing = prev.find((p) => p._id === u._id);
+          return { ...u, unreadCount: existing?.unreadCount || 0 };
+        })
+      );
     };
 
-    const onTyping = (payload) => {
-      setTypingUsers(prev => {
-        if (payload.isTyping) {
-          const exists = prev.find(p => p.userId === payload.userId && p.chatId === payload.chatId);
-          if (exists) return prev;
-          return [...prev, { userId: payload.userId, name: payload.name, chatId: payload.chatId }];
-        } else {
-          return prev.filter(p => !(p.userId === payload.userId && p.chatId === payload.chatId));
-        }
-      });
+    const onPresence = ({ userId, online, lastSeen }) =>
+      setUsers((prev) =>
+        prev.map((u) => (u._id === userId ? { ...u, online, lastSeen } : u))
+      );
+
+    const onNewMessage = (msg) => {
+      const senderId = msg.sender._id;
+      if (selectedUser?._id === senderId) return;
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === senderId
+            ? { ...u, unreadCount: (u.unreadCount || 0) + 1 }
+            : u
+        )
+      );
     };
 
-    socket.on('room-upsert', onRoomsUpdate);
-    socket.on('user-list', onUserList);
-    socket.on('presence', onPresence);
-    socket.on('typing', onTyping);
+    socket.on("room-upsert", onRoomsUpdate);
+    socket.on("user-list", onUserList);
+    socket.on("presence", onPresence);
+    socket.on("new-message", onNewMessage);
 
     return () => {
-      socket.off('room-upsert', onRoomsUpdate);
-      socket.off('user-list', onUserList);
-      socket.off('presence', onPresence);
-      socket.off('typing', onTyping);
+      socket.off("room-upsert", onRoomsUpdate);
+      socket.off("user-list", onUserList);
+      socket.off("presence", onPresence);
+      socket.off("new-message", onNewMessage);
     };
-  }, [socket]);
+  }, [socket, selectedUser]);
 
   const handleStartPrivateChat = async (user) => {
-    const fakeChat = {
-      _id: `dm-${currentUser._id}-${user._id}`,
-      isGroup: false,
-      name: user.name,
-      members: [currentUser._id, user._id],
-      lastMessage: null,
-      unreadCount: 0,
-    };
-    setRooms(prev => [fakeChat, ...prev.filter(r => r._id !== fakeChat._id)]);
-    setActiveRoomId(fakeChat._id);
-    socket?.joinRoom(fakeChat._id);
-  };
+    setUsers((prev) =>
+      prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
+    );
+    setSelectedUser(user);
 
-  const handleCreateRoom = async (roomName) => {
-    const newRoom = {
-      _id: `group-${Date.now()}`,
-      name: roomName,
-      isGroup: true,
-      members: [currentUser._id],
-      lastMessage: null,
-      unreadCount: 0,
-    };
-    setRooms(prev => [newRoom, ...prev]);
-    setActiveRoomId(newRoom._id);
-    socket?.joinRoom(newRoom._id);
+    const existingRoom = rooms.find(
+      (r) =>
+        !r.isGroup &&
+        r.members?.some((m) => m._id === user._id) &&
+        r.members?.some((m) => m._id === currentUser._id)
+    );
+
+    if (existingRoom) {
+      setActiveRoomId(existingRoom._id);
+      joinRoom(existingRoom._id);
+      return;
+    }
+
+    try {
+      const apiBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+      const res = await fetch(`${apiBase}/api/private`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${currentUser.token}`,
+        },
+        body: JSON.stringify({ targetId: user._id }),
+      });
+      const room = await res.json();
+      setRooms((prev) => [room, ...prev.filter((r) => r._id !== room._id)]);
+      setActiveRoomId(room._id);
+      joinRoom(room._id);
+    } catch (err) {
+      console.error("Failed to start private chat:", err);
+    }
   };
 
   return (
-    <div className="h-screen flex bg-gray-100 text-gray-900">
+    <div className="h-screen flex bg-gray-50 text-gray-900">
       {/* Sidebar */}
-      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="px-4 py-3 flex items-center gap-3 border-b border-gray-100">
-          <img src={currentUser.avatarUrl} alt={`${currentUser.name} avatar`} className="w-10 h-10 rounded-full object-cover" />
+      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg rounded-tr-2xl rounded-br-2xl">
+        {/* Current user profile */}
+        <div className="px-5 py-2 flex items-center gap-3 border-b border-gray-100 bg-blue-50 rounded-t-2xl">
+          <img
+            src={currentUser.avatarUrl || "/default-avatar.png"}
+            alt={currentUser.name}
+            className="w-12 h-12 rounded-full object-cover border border-gray-200"
+          />
           <div>
-            <div className="text-sm font-medium">{currentUser.name}</div>
-            <div className="text-xs text-gray-500"><OnlineStatus user={{...currentUser, online: true}} small /></div>
+            <div className="text-sm font-semibold text-gray-900">{currentUser.name}</div>
+            <div className="text-xs text-gray-500">
+              <OnlineStatus user={{ ...currentUser, online: true }} small />
+            </div>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <RoomsList
-            rooms={rooms}
-            activeRoomId={activeRoomId}
-            onSelectRoom={(id) => { setActiveRoomId(id); socket?.joinRoom(id); }}
-            onCreateRoom={handleCreateRoom}
+        {/* Users List */}
+        <div className="flex-1 overflow-y-auto p-2">
+          <UsersList
+            users={users}
+            currentUserId={currentUser._id}
+            onStartPrivateChat={handleStartPrivateChat}
           />
+        </div>
+
+        {/* Last sync */}
+        <div className="p-3 text-xs text-gray-400 text-center border-t border-gray-100">
+          Last sync: {formatMessageTime(new Date())}
         </div>
       </aside>
 
-      {/* Chat area */}
-      <main className="flex-1 flex flex-col">
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-0">
-          <div className="md:col-span-3 flex flex-col bg-white">
-            <Routes>
-              <Route path="/chat/rooms/:roomId" element={
-                <ChatRouter
-                  socket={socket}
-                  currentUser={currentUser}
-                  activeRoomId={activeRoomId}
-                  setActiveRoomId={setActiveRoomId}
-                />
-              }/>
-              <Route path="/chat/user/:userId" element={
-                <ChatRouter
-                  socket={socket}
-                  currentUser={currentUser}
-                  activeRoomId={activeRoomId}
-                  setActiveRoomId={setActiveRoomId}
-                />
-              }/>
-              <Route path="/chat" element={
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  Select a room or a user to start chatting
-                </div>
-              }/>
-            </Routes>
+      {/* Chat Window */}
+      <main className="flex-1 flex flex-col bg-gray-50">
+        {activeRoomId && selectedUser ? (
+          <ChatWindow
+            chatId={activeRoomId}
+            socket={socketHook}
+            currentUser={currentUser}
+            chatUser={selectedUser}
+            allUsers={users}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-lg font-medium">
+            Select a user to start chatting
           </div>
-
-          {/* Users list */}
-          <aside className="hidden md:block md:col-span-1 border-l border-gray-200 bg-white">
-            <div className="px-4 py-3 border-b">
-              <h3 className="text-sm font-semibold">People</h3>
-              <p className="text-xs text-gray-500">Students & teachers</p>
-            </div>
-            <UsersList
-              users={users}
-              onStartPrivateChat={handleStartPrivateChat}
-            />
-            <div className="p-3 text-xs text-gray-400">
-              Last sync: {formatRelativeTime(new Date())}
-            </div>
-          </aside>
-        </div>
-
-        <div className="bg-gray-50 border-t border-gray-200 p-2">
-          <TypingIndicator typingUsers={typingUsers.filter(t => t.chatId === activeRoomId)} />
-        </div>
+        )}
       </main>
     </div>
   );
-};
-
-ChatPageInner.propTypes = {
-  currentUser: PropTypes.object.isRequired,
-};
-
-/* Main ChatPage export */
-const ChatPage = ({ currentUser }) => {
-  return <ChatPageInner currentUser={currentUser} />;
 };
 
 ChatPage.propTypes = {

@@ -1,23 +1,21 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { formatRelativeTime } from '../../utils/time';
-
-/**
- * OnlineStatus — shows small status indicator and last seen text.
- * Props:
- *  - user: { online: bool, lastSeen: timestamp }
- *  - small: boolean for compact display
- */
+import React from "react";
+import PropTypes from "prop-types";
 
 const OnlineStatus = ({ user, small }) => {
-  const color = user.online ? 'bg-green-400' : 'bg-gray-300';
+  if (!user) return null;
   return (
-    <div className={`flex items-center gap-2 ${small ? 'text-xs' : 'text-sm'}`}>
-      <span className={`inline-block w-2 h-2 rounded-full ${color}`} aria-hidden="true" />
-      <span className="text-xs text-gray-500">
-        {user.online ? 'Online' : user.lastSeen ? `Last seen ${formatRelativeTime(new Date(user.lastSeen))}` : 'Offline'}
-      </span>
-    </div>
+    <span
+      className={`inline-flex items-center ${
+        small ? "text-xs" : "text-sm"
+      } ${user.online ? "text-green-500" : "text-gray-400"}`}
+    >
+      <span
+        className={`w-2 h-2 mr-1 rounded-full ${
+          user.online ? "bg-green-500" : "bg-gray-400"
+        }`}
+      ></span>
+      {user.online ? "Online" : "Offline"}
+    </span>
   );
 };
 
