@@ -29,8 +29,8 @@ const SeeResources = () => {
       const res = await axios.get("http://localhost:4000/api/resources", {
         headers: { Authorization: `Bearer ${token}` },
         params: {
-          course: stream,
-          semester: Number(semester),
+          stream,
+          semester,
           subject,
         },
       });
