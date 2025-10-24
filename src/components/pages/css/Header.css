@@ -46,3 +46,21 @@
   background: #e0f7f1;
   color: #43e97b;
 }
+/* Dropdown for Resources (desktop only) */
+.relative .absolute {
+  display: none;
+}
+
+.relative:hover .absolute {
+  display: block;
+}
+
+.absolute a {
+  text-decoration: none;
+  color: #1e3a8a;
+  font-weight: 500;
+}
+
+.absolute a:hover {
+  background-color: #e0f2fe;
+}

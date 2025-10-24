@@ -10,6 +10,8 @@ import Register from './components/pages/Register';
 import ForgotPassword from './components/pages/ForgotPassword';
 import ChatPage from './components/pages/ChatPage';
 import ResetPassword from './components/pages/ResetPassword';
+import UploadResources from './components/pages/uploadResources';
+import SeeResources from './components/pages/seeResources';
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,6 +28,8 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/upload-resources" element={<UploadResources />} />
+        <Route path="/see-resources" element={<SeeResources />} />
 
       </Routes>
     </Router>
