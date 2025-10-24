@@ -1,35 +1,33 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import './css/ForgotPassword.css';
+import './css/ResetPassword.css';
 
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-const ForgotPassword = () => {
-  const [email, setEmail] = useState('');
+const ResetPassword = () => {
+  const { token } = useParams();
+  const [password, setPassword] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleReset = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/password/forgot`, {
+      const res = await fetch(`${API_BASE_URL}/api/password/reset/${token}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ password }),
       });
       const data = await res.json();
 
-      if (res.ok) {
-        setMessage({ type: 'success', text: "✅ Password reset link sent! Check your email." });
-      } else {
-        setMessage({ type: 'error', text: `❌ ${data.message}` });
-      }
+      if (res.ok) setMessage({ type: 'success', text: "✅ Password reset successfully. You can now login." });
+      else setMessage({ type: 'error', text: `❌ ${data.message}` });
     } catch (err) {
-      setMessage({ type: 'error', text: "❌ Something went wrong. Try again." });
+      setMessage({ type: 'error', text: "❌ Something went wrong." });
     } finally {
       setLoading(false);
     }
@@ -43,17 +41,17 @@ const ForgotPassword = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
       >
-        <h2 className="forgot-title">Forgot Password?</h2>
-        <form className="forgot-form" onSubmit={handleReset}>
+        <h2 className="forgot-title">Reset Password</h2>
+        <form className="forgot-form" onSubmit={handleSubmit}>
           <input 
-            type="email" 
-            placeholder="Enter your registered email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
+            type="password"
+            placeholder="Enter new password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             required
           />
           <button type="submit" disabled={loading}>
-            {loading ? "Sending..." : "Send Reset Link"}
+            {loading ? "Resetting..." : "Reset Password"}
           </button>
         </form>
         {message && (
@@ -62,11 +60,11 @@ const ForgotPassword = () => {
           </p>
         )}
         <p className="login-link">
-          Remembered your password? <Link to="/login">Login</Link>
+          <Link to="/login">Back to Login</Link>
         </p>
       </motion.div>
     </div>
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword;

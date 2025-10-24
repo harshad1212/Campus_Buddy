@@ -7,11 +7,9 @@ import Home from './components/pages/Home';
 import About from './components/pages/AboutUs';
 import Contact from './components/pages/ContactUs';
 import Register from './components/pages/Register';
-import ChatPage from './components/pages/ChatPage';
-import SeeResources from './components/pages/seeResources';
 import ForgotPassword from './components/pages/ForgotPassword';
-import UploadResources from './components/pages/uploadResources';
-
+import ChatPage from './components/pages/ChatPage';
+import ResetPassword from './components/pages/ResetPassword';
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
@@ -26,8 +24,9 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/see-resources" element={<SeeResources />} />
-        <Route path="/upload-resources" element={<UploadResources />} />
+        <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
+
       </Routes>
     </Router>
   );

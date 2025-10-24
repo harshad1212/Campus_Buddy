@@ -1,95 +1,158 @@
+
 .home-container {
-  display: flex;
-  flex-direction: column;
+  font-family: 'Inter', sans-serif;
+  background: #e5f0ff; /* soft blue background */
+  color: #1e69af;
   min-height: 100vh;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: #f4f7fb;
 }
 
+/* Main content area */
 .home-main {
-  flex: 1;
+  padding: 4rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
+/* Welcome section */
 .welcome-section {
   text-align: center;
-  padding: 60px 20px;
-  background: linear-gradient(90deg, #43e97b, #38f9d7);
-  color: #fff;
+  margin-bottom: 4rem;
+  padding: 2rem 1rem;
+  background: #1e64af;
+  color: #ffffff;
+  border-radius: 1rem;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.1);
 }
 
 .welcome-section h1 {
   font-size: 3rem;
-  margin-bottom: 15px;
+  margin-bottom: 1rem;
+  font-weight: 700;
 }
 
 .welcome-section p {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: #dbeafe;
 }
 
-/* Module sections */
+/* Module section */
 .module-section {
   display: flex;
   align-items: center;
-  padding: 60px 20px;
-  gap: 50px;
+  margin-bottom: 3rem;
+  gap: 2rem;
+  flex-wrap: wrap;
 }
 
 .module-section.reverse {
   flex-direction: row-reverse;
-  background: #eef3f9;
 }
 
-.module-section.normal {
-  background: #ffffff;
+.module-image {
+  flex: 1 1 250px;
+  text-align: center;
 }
 
 .module-image img {
-  width: 250px;
-  max-width: 100%;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  max-width: 180px;
+  width: 100%;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.module-image img:hover {
+  transform: translateY(-8px) scale(1.05);
+  box-shadow: 0 15px 40px rgba(0,0,0,0.15);
 }
 
 .module-text {
-  flex: 1;
+  flex: 2 1 400px;
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+  transition: transform 0.3s ease;
+}
+
+.module-text:hover {
+  transform: translateY(-5px);
 }
 
 .module-text h2 {
   font-size: 2rem;
-  margin-bottom: 15px;
-  color: #2d2d2d;
+  margin-bottom: 0.6rem;
+  color: #1e3a8a;
+  font-weight: 700;
 }
 
 .module-text p {
-  font-size: 1.1rem;
-  margin-bottom: 20px;
-  color: #555;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #374151;
+  margin-bottom: 1.5rem;
 }
 
+/* Button styling */
 .redirect-btn {
-  padding: 12px 25px;
-  background: #43e97b;
-  color: #fff;
+  padding: 12px 30px;
+  background: #1e40af;
+  color: #ffffff;
+  font-weight: 600;
   border: none;
-  border-radius: 8px;
-  font-size: 1rem;
+  border-radius: 0.75rem;
   cursor: pointer;
-  transition: background 0.3s, transform 0.3s;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(30,64,175,0.3);
 }
 
 .redirect-btn:hover {
-  background: #38f9d7;
+  background: #2563eb;
   transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(37,99,235,0.35);
 }
 
-/* Responsive */
-@media screen and (max-width: 900px) {
+/* Responsive adjustments */
+@media (max-width: 1024px) {
   .module-section {
-    flex-direction: column !important;
+    flex-direction: column;
     text-align: center;
   }
 
+  .module-section.reverse {
+    flex-direction: column;
+  }
+
+  .module-text {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+  }
+
   .module-image img {
-    margin-bottom: 20px;
+    max-width: 150px;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-section h1 {
+    font-size: 2rem;
+  }
+
+  .welcome-section p {
+    font-size: 1rem;
+  }
+
+  .module-text h2 {
+    font-size: 1.5rem;
+  }
+
+  .module-text p {
+    font-size: 0.95rem;
+  }
+
+  .redirect-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
   }
 }
