@@ -36,7 +36,7 @@ const Header = ({ setCurrentUser }) => {
             >
               <Link to="#" className="hover:text-gray-200 transition">Resources ▾</Link>
               {showDropdown && (
-                <div className="absolute left-0 mt-2 w-48 bg-white text-blue-600 rounded-lg shadow-lg">
+                <div className="absolute left-0 mt-0 w-48 bg-white text-blue-600 rounded-lg shadow-lg">
                   <Link
                     to="/upload-resources"
                     className="block px-4 py-2 hover:bg-blue-100"

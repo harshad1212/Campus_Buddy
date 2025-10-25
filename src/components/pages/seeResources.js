@@ -18,10 +18,10 @@ const SeeResources = () => {
     setSubject(subjects ? subjects[0] : "");
   }, [stream, semester]);
 
-  // Fetch filtered resources from backend
+  // Fetch resources with filters
   const fetchResources = async () => {
-    if (!stream || !semester || !subject) {
-      alert("Please select stream, semester, and subject");
+    if (!token) {
+      alert("You must be logged in to view resources!");
       return;
     }
 
@@ -29,9 +29,9 @@ const SeeResources = () => {
       const res = await axios.get("http://localhost:4000/api/resources", {
         headers: { Authorization: `Bearer ${token}` },
         params: {
-          stream,
-          semester,
-          subject,
+          stream: stream || "",
+          semester: semester || "",
+          subject: subject || "",
         },
       });
 
@@ -97,9 +97,15 @@ const SeeResources = () => {
                 <h3>{res.title}</h3>
                 <p className="desc">{res.description || "No description available"}</p>
                 <div className="actions">
-                  <a href={`http://localhost:4000${res.fileUrl}`} target="_blank" rel="noopener noreferrer">
-                    <button>Download</button>
-                  </a>
+                  <a
+                    href={res.fileUrl}
+                    download={res.fileName} // ✅ preserves original name
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                  <button>Download</button>
+                </a>
+
                   <span>Uploaded by: {res.uploader?.name || "Unknown"}</span>
                 </div>
               </div>

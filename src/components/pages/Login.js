@@ -51,6 +51,9 @@ const Login = ({ setCurrentUser }) => {
         sameSite: "Strict",            // CSRF protection
       });
 
+      // ✅ Save token in localStorage for UploadResources.js
+      localStorage.setItem("token", data.token);
+
       setCurrentUser(userData);
       navigate("/home", { replace: true });
     } catch (err) {

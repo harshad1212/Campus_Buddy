@@ -23,6 +23,13 @@ const UploadResources = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // ✅ Check if user is logged in
+    if (!token) {
+      alert("You must be logged in to upload resources!");
+      return;
+    }
+
     if (!title || !file || !stream || !semester || !subject) {
       alert("Please fill all required fields!");
       return;
@@ -31,14 +38,17 @@ const UploadResources = () => {
     const formData = new FormData();
     formData.append("title", title);
     formData.append("file", file);
-    formData.append("course", stream);
+    formData.append("stream", stream);
     formData.append("semester", semester);
     formData.append("subject", subject);
     formData.append("description", description);
 
     try {
       await axios.post("http://localhost:4000/api/resources/upload", formData, {
-        headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+        headers: { 
+          "Content-Type": "multipart/form-data", 
+          Authorization: `Bearer ${token}` 
+        },
       });
       alert("Resource uploaded successfully!");
       setTitle(""); 
@@ -48,8 +58,8 @@ const UploadResources = () => {
       setSubject(resourcesData[streamsList[0]][1][0]); 
       setDescription("");
     } catch (err) {
-      console.error(err);
-      alert("Failed to upload resource!");
+      console.error("Upload Error:", err.response || err);
+      alert("Failed to upload resource! Check console for details.");
     }
   };
 
@@ -59,7 +69,6 @@ const UploadResources = () => {
       <main className="upload-container">
         <h1>Upload Resources</h1>
         <form className="upload-form" onSubmit={handleSubmit}>
-          {/* Resource Title */}
           <input 
             type="text" 
             placeholder="Resource Title" 
@@ -67,7 +76,6 @@ const UploadResources = () => {
             onChange={(e) => setTitle(e.target.value)} 
           />
 
-          {/* Stream / Semester / Subject Row */}
           <div className="form-row">
             <div className="form-group">
               <label>Stream</label>
@@ -91,17 +99,13 @@ const UploadResources = () => {
             </div>
           </div>
 
-          {/* Description */}
           <textarea 
             placeholder="Description (optional)" 
             value={description} 
             onChange={(e) => setDescription(e.target.value)} 
           />
 
-          {/* File Upload */}
           <input type="file" onChange={(e) => setFile(e.target.files[0])} />
-
-          {/* Submit Button */}
           <button type="submit">Upload</button>
         </form>
       </main>
