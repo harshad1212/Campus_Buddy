@@ -433,3 +433,58 @@ h1 {
   font-weight: 400;
 }
 
+
+
+.like-btn {
+  background: #eee;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s;
+}
+
+.like-btn.liked {
+  background: #ff6b81;
+  color: white;
+}
+
+.comments-section {
+  margin-top: 1rem;
+  background: #f8f8f8;
+  padding: 0.8rem;
+  border-radius: 10px;
+}
+
+.comment-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.comment-form input {
+  flex: 1;
+  padding: 6px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+}
+
+.comment-form button {
+  background: #4b7bec;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.comments-list p {
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.no-comments {
+  font-size: 13px;
+  color: #777;
+}

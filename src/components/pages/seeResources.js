@@ -29,16 +29,76 @@ const SeeResources = () => {
         params: { stream, semester, subject },
       });
 
-      setResources(res.data);
+      const resourcesWithFlags = res.data.map((r) => ({
+        ...r,
+        liked: r.likes?.includes(getUserIdFromToken()),
+        commentText: "",
+      }));
+
+      setResources(resourcesWithFlags);
     } catch (err) {
       console.error("Fetch error:", err);
       alert("Failed to fetch resources!");
     }
   };
 
+  const getUserIdFromToken = () => {
+    try {
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(window.atob(base64)).id;
+    } catch {
+      return null;
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     fetchResources();
+  };
+
+  // ❤️ Like Function
+  const handleLike = async (id) => {
+    try {
+      const res = await axios.post(
+        `http://localhost:4000/api/resources/${id}/like`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setResources((prev) =>
+        prev.map((r) =>
+          r._id === id
+            ? { ...r, liked: res.data.liked, likes: Array(res.data.likesCount).fill("x") }
+            : r
+        )
+      );
+    } catch (err) {
+      console.error("Like error:", err);
+    }
+  };
+
+  // 💬 Comment Function
+  const handleCommentSubmit = async (e, id) => {
+    e.preventDefault();
+    const resource = resources.find((r) => r._id === id);
+    if (!resource?.commentText) return;
+
+    try {
+      const res = await axios.post(
+        `http://localhost:4000/api/resources/${id}/comment`,
+        { text: resource.commentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      setResources((prev) =>
+        prev.map((r) =>
+          r._id === id ? { ...r, comments: res.data, commentText: "" } : r
+        )
+      );
+    } catch (err) {
+      console.error("Comment error:", err);
+    }
   };
 
   return (
@@ -53,21 +113,39 @@ const SeeResources = () => {
             <div className="form-group">
               <label>Stream</label>
               <select value={stream} onChange={(e) => setStream(e.target.value)}>
-                {streamsList.map((s) => <option key={s} value={s}>{s}</option>)}
+                {streamsList.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="form-group">
               <label>Semester</label>
-              <select value={semester} onChange={(e) => setSemester(Number(e.target.value))}>
-                {semestersList.map((sem) => <option key={sem} value={sem}>{sem}</option>)}
+              <select
+                value={semester}
+                onChange={(e) => setSemester(Number(e.target.value))}
+              >
+                {semestersList.map((sem) => (
+                  <option key={sem} value={sem}>
+                    {sem}
+                  </option>
+                ))}
               </select>
             </div>
 
             <div className="form-group">
               <label>Subject</label>
-              <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-                {resourcesData[stream][semester].map((subj) => <option key={subj} value={subj}>{subj}</option>)}
+              <select
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              >
+                {resourcesData[stream][semester].map((subj) => (
+                  <option key={subj} value={subj}>
+                    {subj}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -96,9 +174,56 @@ const SeeResources = () => {
                 </div>
 
                 <div className="actions">
-                  <a href={res.fileUrl} download={res.fileName} target="_blank" rel="noopener noreferrer">
+                  <a
+                    href={res.fileUrl}
+                    download={res.fileName}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
                     <button>Download</button>
                   </a>
+
+                  <button
+                    onClick={() => handleLike(res._id)}
+                    className={`like-btn ${res.liked ? "liked" : ""}`}
+                  >
+                    ❤️ {res.likes?.length || 0}
+                  </button>
+                </div>
+
+                <div className="comments-section">
+                  <form
+                    onSubmit={(e) => handleCommentSubmit(e, res._id)}
+                    className="comment-form"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Add a comment..."
+                      value={res.commentText || ""}
+                      onChange={(e) =>
+                        setResources((prev) =>
+                          prev.map((r) =>
+                            r._id === res._id
+                              ? { ...r, commentText: e.target.value }
+                              : r
+                          )
+                        )
+                      }
+                    />
+                    <button type="submit">Post</button>
+                  </form>
+
+                  <div className="comments-list">
+                    {res.comments?.length > 0 ? (
+                      res.comments.map((c) => (
+                        <p key={c._id}>
+                          <strong>{c.user?.name || "User"}:</strong> {c.text}
+                        </p>
+                      ))
+                    ) : (
+                      <p className="no-comments">No comments yet</p>
+                    )}
+                  </div>
                 </div>
               </div>
             ))
