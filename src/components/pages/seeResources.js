@@ -82,9 +82,9 @@ const SeeResources = () => {
             resources.map((res) => (
               <div className="resource-card" key={res._id}>
                 <div className="resource-tags">
-                  <span className="tag">{res.stream}</span>
-                  <span className="tag">Sem {res.semester}</span>
-                  <span className="tag">{res.subject}</span>
+                  <span className="tag stream">{res.stream}</span>
+                  <span className="tag semester">Sem {res.semester}</span>
+                  <span className="tag subject">{res.subject}</span>
                 </div>
 
                 <h3>{res.title}</h3>
