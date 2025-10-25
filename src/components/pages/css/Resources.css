@@ -1,4 +1,4 @@
-/* --- Full Reset to remove extra space --- */
+
 *,
 *::before,
 *::after {
@@ -8,8 +8,6 @@
 }
 
 html, body {
-  margin: 0;
-  padding: 0;
   font-family: "Poppins", sans-serif;
   background-color: #f9f9f9;
   min-height: 100%;
@@ -29,7 +27,7 @@ img, video {
   display: block;
 }
 
-/* --- Header Fix --- */
+/* --- Header --- */
 .header {
   position: sticky;
   top: 0;
@@ -38,35 +36,32 @@ img, video {
   z-index: 100;
 }
 
-/* --- Resources Page Container --- */
+/* --- Page Container --- */
 .resources-page {
   min-height: 80vh;
   color: #222;
-  padding-top: 0.1px; /* prevents margin collapse above header */
+  padding-top: 0.1px;
   animation: fadeIn 0.6s ease-in-out;
 }
 
-/* Prevent margin collapse for first child elements */
 .resources-page > *:first-child {
   margin-top: 0;
 }
 
-/* Upload / See Container */
 .upload-container,
 .see-container {
   width: 85%;
   margin: 0 auto;
   text-align: center;
-  padding-top: 2rem; /* spacing below header */
+  padding-top: 2rem;
 }
 
-/* Fade-in animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Page Titles */
+/* --- Page Titles --- */
 h1 {
   font-size: 2.2rem;
   font-weight: 600;
@@ -75,7 +70,7 @@ h1 {
   letter-spacing: 0.5px;
 }
 
-/* Upload Form */
+/* --- Upload Form --- */
 .upload-form {
   display: flex;
   flex-direction: column;
@@ -113,13 +108,16 @@ h1 {
   box-shadow: 0 0 6px rgba(0,123,255,0.25);
 }
 
-/* Submit Button */
+.upload-form textarea {
+  resize: vertical;
+}
+
 .upload-form button {
   padding: 10px;
   border-radius: 8px;
   border: none;
   font-weight: bold;
-  background: linear-gradient(90deg, #43e97b, #38f9d7);
+  background: linear-gradient(90deg, #43a7e9, #25cdd2);
   color: #fff;
   cursor: pointer;
   transition: all 0.3s;
@@ -130,11 +128,13 @@ h1 {
   transform: scale(1.03);
 }
 
-/* Stream / Semester / Subject Row */
+/* --- Form Row --- */
 .form-row {
   display: flex;
-  gap: 15px;
   flex-wrap: wrap;
+  gap: 15px;
+  align-items: flex-end;
+  width: 100%;
 }
 
 .form-row .form-group {
@@ -143,11 +143,18 @@ h1 {
   flex: 1;
   gap: 5px;
 }
-/* --- SeeResources / Search Form --- */
+
+.form-group label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #555;
+}
+
+/* --- Search Form --- */
 .search-form {
-  width: 90%;
+  width: 100%;
   max-width: 1100px;
-  margin: 2rem auto;
+  margin: 1.5rem auto 2rem auto;
   padding: 1rem 1.5rem;
   background-color: #fff;
   border-radius: 12px;
@@ -159,10 +166,7 @@ h1 {
 }
 
 .search-form label {
-  font-size: 0.85rem;
-  color: #555;
   margin-bottom: 0.2rem;
-  font-weight: 500;
 }
 
 .search-form select {
@@ -174,78 +178,77 @@ h1 {
   transition: all 0.3s;
 }
 
-.search-form select:focus {
+.search-form select:focus,
+.search-form select:hover {
   outline: none;
   border-color: #007bff;
   box-shadow: 0 0 6px rgba(0,123,255,0.2);
 }
 
-/* Inline form rows */
-.form-row {
+.search-row {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
   gap: 15px;
-  width: 100%;
+  align-items: flex-end;
 }
 
 .form-actions {
+  display: flex;
+  gap: 10px;
   margin-left: auto;
 }
 
 .form-actions button {
-  padding: 8px 22px;
-  border-radius: 25px;
+  padding: 8px 18px;
+  border-radius: 6px;
   border: none;
-  background-color: #3b5998; /* Library style */
-  color: #fff;
-  font-weight: 500;
   cursor: pointer;
+  font-weight: 500;
   transition: all 0.3s;
+  background: linear-gradient(90deg, #43a7e9, #25cdd2);
+  color: #fff;
 }
 
 .form-actions button:hover {
-  background-color: #2d4373;
+  background: linear-gradient(90deg, #38f9d7, #43e97b);
 }
 
-/* Optional: Add subtle hover effect to selects */
-.search-form select:hover {
-  border-color: #007bff;
+/* --- Library Button --- */
+.library-btn {
+  background: #3b5998;
 }
 
-/* Compact spacing */
-.search-form .form-group {
-  display: flex;
-  flex-direction: column;
+.library-btn:hover {
+  background: #2d4373;
 }
 
-
-.form-group label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #555;
-}
-
-/* Textarea */
-.upload-form textarea {
-  resize: vertical;
-}
-
-/* Resource Grid */
+/* --- Resource Grid --- */
 .resources-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, 1fr); /* Always 3 columns */
   gap: 1.5rem;
   margin-top: 2rem;
 }
 
-/* Individual Resource Card */
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .resources-list {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns on smaller screens */
+  }
+}
+
+@media (max-width: 600px) {
+  .resources-list {
+    grid-template-columns: 1fr; /* 1 column on mobile */
+  }
+}
+
 .resource-card {
   background: #fff;
   padding: 1rem;
   border-radius: 10px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
   border: 1px solid #f0f0f0;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
 }
 
@@ -292,51 +295,10 @@ h1 {
   transform: scale(1.05);
 }
 
-/* --- Search Form --- */
-.search-form {
-  width: 100%;
-  max-width: 1000px;
-  margin: 1.5rem auto 2rem auto;
-}
-
-.search-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  align-items: flex-end;
-}
-
-.form-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.form-actions button {
-  padding: 8px 18px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-  font-weight: 500;
-  transition: all 0.3s;
-  background: linear-gradient(90deg, #43e97b, #38f9d7);
-  color: #fff;
-}
-
-.form-actions button:hover {
-  background: linear-gradient(90deg, #38f9d7, #43e97b);
-}
-
-/* Library Button */
-.library-btn {
-  background: #3b5998;
-}
-
-.library-btn:hover {
-  background: #2d4373;
-}
+/* --- Applied Filters --- */
 .applied-filters {
-  background-color: #e0f7fa; /* soft blue shade */
-  border-left: 5px solid #00bcd4; /* accent color */
+  background-color: #e0f7fa;
+  border-left: 5px solid #00bcd4;
   padding: 12px 20px;
   margin: 1rem 0;
   border-radius: 8px;
@@ -353,6 +315,7 @@ h1 {
 .applied-filters p {
   margin: 0;
 }
+
 .applied-filters-chips {
   display: flex;
   gap: 10px;
@@ -361,7 +324,7 @@ h1 {
 }
 
 .filter-chip {
-  background-color: #00bcd4; /* primary color */
+  background-color: #00bcd4;
   color: white;
   padding: 6px 12px;
   border-radius: 20px;

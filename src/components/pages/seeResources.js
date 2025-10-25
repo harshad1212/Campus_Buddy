@@ -12,13 +12,11 @@ const SeeResources = () => {
   const [resources, setResources] = useState([]);
   const token = localStorage.getItem("token");
 
-  // Update subject list when stream or semester changes
   useEffect(() => {
     const subjects = resourcesData[stream]?.[semester];
     setSubject(subjects ? subjects[0] : "");
   }, [stream, semester]);
 
-  // Fetch resources with filters
   const fetchResources = async () => {
     if (!token) {
       alert("You must be logged in to view resources!");
@@ -28,11 +26,7 @@ const SeeResources = () => {
     try {
       const res = await axios.get("http://localhost:4000/api/resources", {
         headers: { Authorization: `Bearer ${token}` },
-        params: {
-          stream: stream || "",
-          semester: semester || "",
-          subject: subject || "",
-        },
+        params: { stream, semester, subject },
       });
 
       setResources(res.data);
@@ -59,27 +53,21 @@ const SeeResources = () => {
             <div className="form-group">
               <label>Stream</label>
               <select value={stream} onChange={(e) => setStream(e.target.value)}>
-                {streamsList.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
+                {streamsList.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
 
             <div className="form-group">
               <label>Semester</label>
               <select value={semester} onChange={(e) => setSemester(Number(e.target.value))}>
-                {semestersList.map((sem) => (
-                  <option key={sem} value={sem}>{sem}</option>
-                ))}
+                {semestersList.map((sem) => <option key={sem} value={sem}>{sem}</option>)}
               </select>
             </div>
 
             <div className="form-group">
               <label>Subject</label>
               <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-                {resourcesData[stream][semester].map((subj) => (
-                  <option key={subj} value={subj}>{subj}</option>
-                ))}
+                {resourcesData[stream][semester].map((subj) => <option key={subj} value={subj}>{subj}</option>)}
               </select>
             </div>
 
@@ -89,24 +77,28 @@ const SeeResources = () => {
           </div>
         </form>
 
-        {/* Resources Grid */}
         <div className="resources-list">
           {resources.length > 0 ? (
             resources.map((res) => (
               <div className="resource-card" key={res._id}>
+                <div className="resource-tags">
+                  <span className="tag">{res.stream}</span>
+                  <span className="tag">Sem {res.semester}</span>
+                  <span className="tag">{res.subject}</span>
+                </div>
+
                 <h3>{res.title}</h3>
                 <p className="desc">{res.description || "No description available"}</p>
-                <div className="actions">
-                  <a
-                    href={res.fileUrl}
-                    download={res.fileName} // ✅ preserves original name
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                  <button>Download</button>
-                </a>
 
+                <div className="meta">
                   <span>Uploaded by: {res.uploader?.name || "Unknown"}</span>
+                  <span>Date: {new Date(res.createdAt).toLocaleDateString()}</span>
+                </div>
+
+                <div className="actions">
+                  <a href={res.fileUrl} download={res.fileName} target="_blank" rel="noopener noreferrer">
+                    <button>Download</button>
+                  </a>
                 </div>
               </div>
             ))

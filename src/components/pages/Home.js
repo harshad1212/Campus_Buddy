@@ -10,7 +10,7 @@ const Home = () => {
       description:
         'Upload, browse, and manage notes, assignments, and study materials for your courses.',
       img: 'https://cdn-icons-png.flaticon.com/512/2991/2991148.png',
-      link: '/resources',
+      link: '/see-resources',
     },
     {
       title: 'Events',
