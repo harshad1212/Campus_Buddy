@@ -212,15 +212,6 @@ h1 {
   background: linear-gradient(90deg, #38f9d7, #43e97b);
 }
 
-/* --- Library Button --- */
-.library-btn {
-  background: #3b5998;
-}
-
-.library-btn:hover {
-  background: #2d4373;
-}
-
 /* --- Resource Grid --- */
 .resources-list {
   display: grid;
@@ -253,7 +244,7 @@ h1 {
   overflow: hidden;
 }
 
-/* Colorful Header Ribbon */
+/* Header Ribbon */
 .resource-card::before {
   content: "";
   position: absolute;
@@ -269,37 +260,33 @@ h1 {
   box-shadow: 0 12px 28px rgba(0,0,0,0.12);
 }
 
-/* Subject Icon Section */
 .card-icon {
   font-size: 2rem;
   margin-bottom: 0.5rem;
   color: #43a7e9;
 }
 
-/* Title */
 .resource-card h3 {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 700;
   color: #1b3b5f;
   margin-bottom: 0.5rem;
-  position: relative;
 }
 
-/* Description */
 .resource-card .desc {
   font-size: 0.95rem;
   line-height: 1.6;
   color: #555;
 }
 
-/* Meta Info */
 .resource-card .meta {
-  font-size: 0.9rem;
-  color: #777;
-  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  color: #555;
+  display: flex;
+  justify-content:space-evenly;
+  margin: 0.5rem 0;
 }
-
-/* Button Section */
+/* --- Buttons --- */
 .resource-card .actions {
   display: flex;
   justify-content: center;
@@ -307,6 +294,7 @@ h1 {
 }
 
 .resource-card .actions button {
+  margin-right: 2rem;
   padding: 10px 22px;
   border-radius: 10px;
   border: none;
@@ -325,15 +313,16 @@ h1 {
   box-shadow: 0 6px 15px rgba(67,233,123,0.35);
 }
 
-/* --- Center "No resources found" message --- */
+/* --- No resources message --- */
 .resources-list p {
-  grid-column: 1 / -1; /* Span all columns */
+  grid-column: 1 / -1;
   text-align: center;
   font-size: 1rem;
   color: #555;
   margin-top: 1rem;
 }
-/* --- Resource Tags --- */
+
+/* --- Tags --- */
 .resource-tags {
   display: flex;
   flex-wrap: wrap;
@@ -342,7 +331,6 @@ h1 {
   margin-top: 0.5rem;
 }
 
-/* Base style for all tags */
 .tag {
   display: inline-flex;
   align-items: center;
@@ -355,37 +343,23 @@ h1 {
   letter-spacing: 0.3px;
   box-shadow: 0 2px 6px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
+  animation: fadeInTag 0.4s ease;
 }
 
-/* Tag Hover */
 .tag:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
-/* Stream tag (like CSE, IT) */
-.tag.stream {
-  background: linear-gradient(90deg, #43a7e9, #25cdd2);
-}
-
-/* Semester tag */
-.tag.semester {
-  background: linear-gradient(90deg, #43a7e9, #25cdd2);
-}
-
-/* Subject tag */
+.tag.stream,
+.tag.semester,
 .tag.subject {
   background: linear-gradient(90deg, #43a7e9, #25cdd2);
 }
 
-/* Optional: subtle animation */
 @keyframes fadeInTag {
   from { opacity: 0; transform: scale(0.9); }
   to { opacity: 1; transform: scale(1); }
-}
-
-.tag {
-  animation: fadeInTag 0.4s ease;
 }
 
 /* --- Applied Filters --- */
@@ -403,10 +377,6 @@ h1 {
   margin-bottom: 5px;
   font-size: 1rem;
   font-weight: 600;
-}
-
-.applied-filters p {
-  margin: 0;
 }
 
 .applied-filters-chips {
@@ -433,8 +403,7 @@ h1 {
   font-weight: 400;
 }
 
-
-
+/* --- Like Button --- */
 .like-btn {
   background: #eee;
   border: none;
@@ -450,11 +419,15 @@ h1 {
   color: white;
 }
 
+/* --- Comments Section --- */
 .comments-section {
   margin-top: 1rem;
-  background: #f8f8f8;
-  padding: 0.8rem;
-  border-radius: 10px;
+  background: #f8faff;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+  animation: fadeIn 0.4s ease;
 }
 
 .comment-form {
@@ -465,26 +438,66 @@ h1 {
 
 .comment-form input {
   flex: 1;
-  padding: 6px;
+  padding: 8px 10px;
   border: 1px solid #ccc;
-  border-radius: 8px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  transition: 0.3s ease;
+}
+
+.comment-form input:focus {
+  outline: none;
+  border-color: #43a7e9;
+  box-shadow: 0 0 5px rgba(67,167,233,0.3);
 }
 
 .comment-form button {
-  background: #4b7bec;
+  background: linear-gradient(90deg, #43a7e9, #25cdd2);
   color: white;
   border: none;
-  padding: 6px 12px;
-  border-radius: 8px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.3s;
+}
+
+.comment-form button:hover {
+  background: linear-gradient(90deg, #38f9d7, #43e97b);
+  transform: scale(1.05);
 }
 
 .comments-list p {
-  font-size: 14px;
-  margin: 4px 0;
+  font-size: 0.9rem;
+  color: #333;
+  margin: 5px 0;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
 .no-comments {
-  font-size: 13px;
+  font-size: 0.85rem;
   color: #777;
+  text-align: center;
+}
+
+.comments-toggle {
+  text-align: left;
+  margin-top: 8px;
+}
+
+.toggle-btn {
+  background: none;
+  border: none;
+  color: #43a7e9;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  transition: 0.2s;
+}
+
+.toggle-btn:hover {
+  color: #25cdd2;
 }
