@@ -49,6 +49,12 @@ const Header = ({ setCurrentUser }) => {
                   >
                     See Resources
                   </Link>
+                  <Link
+                    to="/my-resources"
+                    className="block px-4 py-2 hover:bg-blue-100"
+                  >
+                    My Resources
+                  </Link>
                 </div>
               )}
             </div>
