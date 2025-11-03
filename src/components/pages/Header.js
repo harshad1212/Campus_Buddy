@@ -5,7 +5,8 @@ import Cookies from "js-cookie";
 const Header = ({ setCurrentUser }) => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false); // 👈 added for hover dropdown
+  const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
+  const [showEventsDropdown, setShowEventsDropdown] = useState(false); // 👈 added for Events dropdown
 
   const handleLogout = () => {
     Cookies.remove("chatUser");
@@ -28,38 +29,47 @@ const Header = ({ setCurrentUser }) => {
           <nav className="hidden md:flex space-x-6 items-center">
             <Link to="/home" className="hover:text-gray-200 transition">Home</Link>
 
-            {/* ✅ Hover Dropdown for Resources */}
+            {/* ✅ Resources Dropdown */}
             <div
               className="relative"
-              onMouseEnter={() => setShowDropdown(true)}
-              onMouseLeave={() => setShowDropdown(false)}
+              onMouseEnter={() => setShowResourcesDropdown(true)}
+              onMouseLeave={() => setShowResourcesDropdown(false)}
             >
               <Link to="#" className="hover:text-gray-200 transition">Resources ▾</Link>
-              {showDropdown && (
+              {showResourcesDropdown && (
+                <div className="absolute left-0 mt-0 w-48 bg-white text-blue-600 rounded-lg shadow-lg">
+                  <Link to="/upload-resources" className="block px-4 py-2 hover:bg-blue-100">Upload Resources</Link>
+                  <Link to="/see-resources" className="block px-4 py-2 hover:bg-blue-100">See Resources</Link>
+                  <Link to="/my-resources" className="block px-4 py-2 hover:bg-blue-100">My Resources</Link>
+                </div>
+              )}
+            </div>
+
+            {/* ✅ Events Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setShowEventsDropdown(true)}
+              onMouseLeave={() => setShowEventsDropdown(false)}
+            >
+              <Link to="#" className="hover:text-gray-200 transition">Events ▾</Link>
+              {showEventsDropdown && (
                 <div className="absolute left-0 mt-0 w-48 bg-white text-blue-600 rounded-lg shadow-lg">
                   <Link
-                    to="/upload-resources"
+                    to="/events"
                     className="block px-4 py-2 hover:bg-blue-100"
                   >
-                    Upload Resources
+                    View Events
                   </Link>
                   <Link
-                    to="/see-resources"
+                    to="/create-events"
                     className="block px-4 py-2 hover:bg-blue-100"
                   >
-                    See Resources
-                  </Link>
-                  <Link
-                    to="/my-resources"
-                    className="block px-4 py-2 hover:bg-blue-100"
-                  >
-                    My Resources
+                    Create Event
                   </Link>
                 </div>
               )}
             </div>
 
-            <Link to="/events" className="hover:text-gray-200 transition">Events</Link>
             <Link to="/chat" className="hover:text-gray-200 transition">Chat</Link>
             <Link to="/study-groups" className="hover:text-gray-200 transition">Study Groups</Link>
             <Link to="/forum" className="hover:text-gray-200 transition">Forum</Link>
@@ -93,19 +103,26 @@ const Header = ({ setCurrentUser }) => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ✅ Mobile Menu */}
       {menuOpen && (
         <div className="md:hidden bg-blue-500 bg-gradient-to-r from-blue-500 to-teal-400 px-4 py-4 space-y-3">
           <Link onClick={() => setMenuOpen(false)} to="/home" className="block hover:text-gray-200 transition">Home</Link>
 
-          {/* ✅ Add dropdown options in mobile menu */}
+          {/* Resources (mobile) */}
           <div className="space-y-1">
             <span className="block text-white font-medium">Resources</span>
-            <Link onClick={() => setMenuOpen(false)} to="/uploadresources" className="block pl-4 text-gray-100 hover:text-gray-200 transition">Upload Resources</Link>
-            <Link onClick={() => setMenuOpen(false)} to="/seeresources" className="block pl-4 text-gray-100 hover:text-gray-200 transition">See Resources</Link>
+            <Link onClick={() => setMenuOpen(false)} to="/upload-resources" className="block pl-4 text-gray-100 hover:text-gray-200 transition">Upload Resources</Link>
+            <Link onClick={() => setMenuOpen(false)} to="/see-resources" className="block pl-4 text-gray-100 hover:text-gray-200 transition">See Resources</Link>
+            <Link onClick={() => setMenuOpen(false)} to="/my-resources" className="block pl-4 text-gray-100 hover:text-gray-200 transition">My Resources</Link>
           </div>
 
-          <Link onClick={() => setMenuOpen(false)} to="/events" className="block hover:text-gray-200 transition">Events</Link>
+          {/* ✅ Events (mobile) */}
+          <div className="space-y-1">
+            <span className="block text-white font-medium">Events</span>
+            <Link onClick={() => setMenuOpen(false)} to="/events" className="block pl-4 text-gray-100 hover:text-gray-200 transition">View Events</Link>
+            <Link onClick={() => setMenuOpen(false)} to="/create-events" className="block pl-4 text-gray-100 hover:text-gray-200 transition">Create Event</Link>
+          </div>
+
           <Link onClick={() => setMenuOpen(false)} to="/chat" className="block hover:text-gray-200 transition">Chat</Link>
           <Link onClick={() => setMenuOpen(false)} to="/study-groups" className="block hover:text-gray-200 transition">Study Groups</Link>
           <Link onClick={() => setMenuOpen(false)} to="/forum" className="block hover:text-gray-200 transition">Forum</Link>

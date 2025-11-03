@@ -1,51 +1,44 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import Header from "./Header";
 import Footer from "./Footer";
 import "./css/Resources.css";
-import { FaHeart, FaDownload, FaCommentDots, FaTrash, FaTrashAlt } from "react-icons/fa";
+import { FaHeart, FaDownload, FaCommentDots, FaTrashAlt } from "react-icons/fa";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-
 
 const MyResources = () => {
   const [myResources, setMyResources] = useState([]);
   const token = localStorage.getItem("token");
 
-  // ✅ Decode JWT to extract userId
-  const getUserIdFromToken = () => {
-    try {
-      const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      return JSON.parse(window.atob(base64)).id;
-    } catch {
-      return null;
-    }
-  };
-
-  // ✅ Fetch user's uploaded resources
-  const fetchMyResources = async () => {
+  // ✅ Fetch user's uploaded resources (no ESLint warnings)
+  const fetchMyResources = useCallback(async () => {
     if (!token) {
       toast.error("⚠️ You must be logged in to view your resources!");
       return;
     }
 
     try {
-      const userId = getUserIdFromToken();
+      // Inline decode JWT
+      const base64Url = token.split(".")[1];
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const userId = JSON.parse(window.atob(base64)).id;
+
       const res = await axios.get("http://localhost:4000/api/resources/my", {
         headers: { Authorization: `Bearer ${token}` },
         params: { uploaderId: userId },
       });
+
       setMyResources(res.data);
     } catch (err) {
       console.error("Fetch error:", err);
       toast.error("❌ Failed to fetch your resources!");
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     fetchMyResources();
-  }, []);
+  }, [fetchMyResources]);
 
   // ✅ Delete handler with custom toast confirmation
   const handleDelete = async (id) => {
@@ -53,7 +46,14 @@ const MyResources = () => {
       ({ closeToast }) => (
         <div style={{ textAlign: "center" }}>
           <p>🗑️ Are you sure you want to delete this resource?</p>
-          <div style={{ marginTop: "10px", display: "flex", justifyContent: "center", gap: "10px" }}>
+          <div
+            style={{
+              marginTop: "10px",
+              display: "flex",
+              justifyContent: "center",
+              gap: "10px",
+            }}
+          >
             <button
               style={{
                 background: "#d9534f",
@@ -145,21 +145,21 @@ const MyResources = () => {
                 </div>
 
                 <div className="actions">
-                <a
+                  <a
                     href={res.fileUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="view-btn"
-                >
+                  >
                     <FaDownload className="icon" /> View / Download
-                </a>
-                <button
+                  </a>
+                  <button
                     className="delete-btn"
                     onClick={() => handleDelete(res._id)}
-                >
+                  >
                     <FaTrashAlt className="icon" /> Delete
-                </button>
-                </div>  
+                  </button>
+                </div>
               </div>
             ))
           ) : (

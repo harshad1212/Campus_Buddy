@@ -13,6 +13,9 @@ import ResetPassword from './components/pages/ResetPassword';
 import UploadResources from './components/pages/uploadResources';
 import SeeResources from './components/pages/seeResources';
 import MyResources from './components/pages/myResources';
+import Events from './components/Events/Events';
+import CreateEvent from './components/Events/CreateEvents';
+import AdminEvents from './components/Events/AdminEvents';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -33,7 +36,9 @@ function App() {
         <Route path="/upload-resources" element={<UploadResources />} />
         <Route path="/see-resources" element={<SeeResources />} />
         <Route path="/my-resources" element={<MyResources />} />
-
+        <Route path="/events" element={<Events />} />
+        <Route path="/create-events" element={<CreateEvent />} />
+        <Route path="/admin-events" element={<AdminEvents />} />
       </Routes>
     </Router>
   );
