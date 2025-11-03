@@ -8,8 +8,10 @@ import {
   FiImage,
   FiVideo,
   FiSmile,
+  FiEdit3,
 } from "react-icons/fi";
 import EmojiPicker from "emoji-picker-react";
+import ReplyPreview from "./ReplyPreview";
 
 const MessageInput = ({
   onSend,
@@ -18,6 +20,7 @@ const MessageInput = ({
   onCancelEdit,
   replyTo,
   onCancelReply,
+  currentUser,
 }) => {
   const [text, setText] = useState(editingMessage?.content || "");
   const [files, setFiles] = useState([]);
@@ -95,7 +98,6 @@ const MessageInput = ({
         : null,
     });
 
-    // Reset input
     setText("");
     setFiles([]);
     setShowEmojiPicker(false);
@@ -106,33 +108,33 @@ const MessageInput = ({
 
   return (
     <div className="relative p-3 bg-white border-t border-blue-100">
-      {/* Reply preview */}
+      {/* Reply Preview */}
       {replyTo && (
-        <div className="flex items-center justify-between bg-blue-50 px-3 py-2 rounded mb-2 border-l-4 border-blue-500">
-          <div className="flex-1 text-xs text-gray-700 truncate">
-            <span className="font-semibold">
-              {replyTo.sender?.name || "Unknown"}:{" "}
-            </span>
-            {replyTo.content || (replyTo.attachments?.length ? "[Attachment]" : "")}
-          </div>
-          <button
-            onClick={onCancelReply}
-            className="p-1 text-gray-500 hover:text-gray-700"
-          >
-            <FiX />
-          </button>
-        </div>
+        <ReplyPreview
+          replyTo={replyTo}
+          currentUser={currentUser}
+          onClose={onCancelReply}
+        />
       )}
 
-      {/* Editing message banner */}
+      {/* --- Editing Message Banner (WhatsApp-like style) --- */}
       {editingMessage && (
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-          <span>Editing message...</span>
+        <div className="flex items-center justify-between bg-blue-50 border-l-4 border-blue-500 rounded-md px-3 py-2 mb-2 shadow-sm">
+          <div className="flex items-center gap-2 text-sm text-blue-700">
+            <FiEdit3 className="text-blue-600" />
+            <div>
+              <div className="font-medium">Editing Message</div>
+              <div className="text-xs text-gray-600 truncate max-w-[200px]">
+                {editingMessage.content || "Attachment"}
+              </div>
+            </div>
+          </div>
           <button
             onClick={onCancelEdit}
-            className="text-blue-600 hover:underline"
+            className="p-1.5 text-blue-600 hover:bg-blue-100 rounded-full transition"
+            title="Cancel editing"
           >
-            Cancel
+            <FiX size={16} />
           </button>
         </div>
       )}
@@ -140,39 +142,28 @@ const MessageInput = ({
       {/* Attachment options */}
       {showAttachOptions && (
         <div className="absolute bottom-16 left-4 flex flex-col gap-2 bg-white border border-blue-100 shadow-lg rounded-lg p-2 z-50">
-          <button
-            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded text-sm"
-            onClick={() => {
-              fileInputRef.current.accept = "image/*";
-              fileInputRef.current.click();
-              setShowAttachOptions(false);
-            }}
-          >
-            <FiImage className="text-blue-500" /> Photo
-          </button>
-
-          <button
-            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded text-sm"
-            onClick={() => {
-              fileInputRef.current.accept = "video/*";
-              fileInputRef.current.click();
-              setShowAttachOptions(false);
-            }}
-          >
-            <FiVideo className="text-blue-500" /> Video
-          </button>
-
-          <button
-            className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded text-sm"
-            onClick={() => {
-              fileInputRef.current.accept =
-                "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-              fileInputRef.current.click();
-              setShowAttachOptions(false);
-            }}
-          >
-            <FiFileText className="text-blue-500" /> Document
-          </button>
+          {[
+            { icon: <FiImage className="text-blue-500" />, label: "Photo", accept: "image/*" },
+            { icon: <FiVideo className="text-blue-500" />, label: "Video", accept: "video/*" },
+            {
+              icon: <FiFileText className="text-blue-500" />,
+              label: "Document",
+              accept:
+                "application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            },
+          ].map(({ icon, label, accept }) => (
+            <button
+              key={label}
+              className="flex items-center gap-2 p-2 hover:bg-blue-50 rounded text-sm"
+              onClick={() => {
+                fileInputRef.current.accept = accept;
+                fileInputRef.current.click();
+                setShowAttachOptions(false);
+              }}
+            >
+              {icon} {label}
+            </button>
+          ))}
         </div>
       )}
 
@@ -191,7 +182,7 @@ const MessageInput = ({
         </div>
       )}
 
-      {/* File previews */}
+      {/* File Previews */}
       {files.length > 0 && (
         <div className="mb-2 flex gap-3 overflow-x-auto">
           {files.map((f, idx) => (
@@ -258,14 +249,14 @@ const MessageInput = ({
 
         <button
           onClick={handleSubmit}
-          className={`p-2 rounded text-white transition ${
+          className={`p-2 rounded-full text-white shadow-sm transition ${
             editingMessage
-              ? "bg-yellow-500 hover:bg-yellow-600"
+              ? "bg-blue-500 hover:bg-blue-600"
               : "bg-blue-600 hover:bg-blue-700"
           }`}
-          title="Send"
+          title={editingMessage ? "Update message" : "Send"}
         >
-          {editingMessage ? "Update" : <FiSend />}
+          {editingMessage ? <FiEdit3 size={18} /> : <FiSend size={18} />}
         </button>
       </div>
     </div>
@@ -279,6 +270,7 @@ MessageInput.propTypes = {
   onCancelEdit: PropTypes.func,
   replyTo: PropTypes.object,
   onCancelReply: PropTypes.func,
+  currentUser: PropTypes.object.isRequired,
 };
 
 export default MessageInput;

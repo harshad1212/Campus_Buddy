@@ -396,15 +396,7 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
         </div>
       )}
 
-      {/* Reply Preview */}
-          <ReplyPreview
-            replyTo={replyTo || editingMessage?.replyTo}
-            currentUser={currentUser}
-            onClose={() => {
-              setReplyTo(null);
-              if (editingMessage) setEditingMessage(null);
-            }}
-          />
+    
 
 
 
@@ -420,6 +412,7 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
             setReplyTo(null);
           }}
           onCancelReply={() => setReplyTo(null)}
+          currentUser={currentUser} 
         />
       </div>
 

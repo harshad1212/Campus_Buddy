@@ -16,6 +16,17 @@
   font-weight: bold;
 }
 
+@media (max-width: 768px) {
+  .header nav ul {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .header {
+    padding: 10px 20px;
+  }
+}
+
 .header nav ul {
   display: flex;
   list-style: none;
