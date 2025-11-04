@@ -2,13 +2,6 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Search } from "lucide-react";
 
-/**
- * UsersList — shows all users with search, status, and chat options.
- * Props:
- *  - users: array of user objects { _id, name, avatarUrl, online, lastSeen, unreadCount }
- *  - onStartPrivateChat(user)
- */
-
 const UserRow = ({ user, onClick }) => (
   <button
     onClick={() => onClick(user)}
@@ -21,7 +14,6 @@ const UserRow = ({ user, onClick }) => (
         alt={`${user.name} avatar`}
         className="w-12 h-12 rounded-full object-cover border border-gray-200"
       />
-      {/* Online status dot */}
       <span
         className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${
           user.online ? "bg-green-500" : "bg-gray-400"
@@ -29,14 +21,14 @@ const UserRow = ({ user, onClick }) => (
       ></span>
     </div>
 
-    {/* User Info */}
+    {/* Info */}
     <div className="flex-1 min-w-0">
       <div className="flex justify-between items-center">
         <span className="text-sm font-semibold truncate text-gray-900">
           {user.name}
         </span>
 
-        {/* Unread messages badge */}
+        {/* 🔵 Unread badge */}
         {user.unreadCount > 0 && (
           <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
             {user.unreadCount}
@@ -55,7 +47,7 @@ UserRow.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-const UsersList = ({ users, currentUserId, onStartPrivateChat }) => {
+const UsersList = ({ users, currentUserId, onStartPrivateChat, activeChatId, socket }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [localUsers, setLocalUsers] = useState(users);
 
@@ -63,8 +55,38 @@ const UsersList = ({ users, currentUserId, onStartPrivateChat }) => {
     setLocalUsers(users);
   }, [users]);
 
+  // 🟢 Listen for new incoming messages
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleNewMessage = (msg) => {
+      // Only count if message is NOT from current user
+      if (msg.sender?._id === currentUserId) return;
+
+      // Identify which chat/user this message belongs to
+      const senderId = msg.sender?._id || msg.sender;
+
+      // Increment unread count if chat isn't open
+      setLocalUsers((prev) =>
+        prev.map((u) => {
+          if (u._id === senderId) {
+            const isChatOpen = activeChatId === msg.chat?._id || msg.chat === activeChatId;
+            return {
+              ...u,
+              unreadCount: isChatOpen ? 0 : (u.unreadCount || 0) + 1,
+            };
+          }
+          return u;
+        })
+      );
+    };
+
+    socket.on("new-message", handleNewMessage);
+    return () => socket.off("new-message", handleNewMessage);
+  }, [socket, currentUserId, activeChatId]);
+
   const handleClickUser = (user) => {
-    // Clear unread count locally
+    // Clear unread count when chat opens
     setLocalUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
     );
@@ -82,7 +104,7 @@ const UsersList = ({ users, currentUserId, onStartPrivateChat }) => {
         <h2 className="text-sm font-semibold text-blue-700">All Users</h2>
       </div>
 
-      {/* Search Bar */}
+      {/* Search */}
       <div className="p-4 border-b bg-white">
         <div className="flex items-center bg-gray-100 rounded-full border border-gray-200 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
           <Search className="w-4 h-4 text-gray-400 mr-2" />
@@ -116,6 +138,8 @@ UsersList.propTypes = {
   users: PropTypes.array.isRequired,
   onStartPrivateChat: PropTypes.func.isRequired,
   currentUserId: PropTypes.string.isRequired,
+  activeChatId: PropTypes.string,
+  socket: PropTypes.object,
 };
 
 export default UsersList;
