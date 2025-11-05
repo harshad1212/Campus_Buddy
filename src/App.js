@@ -23,6 +23,7 @@ import RegisterTeacher from "./components/pages/RegisterTeacher";
 import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
+import AdminDashboard from './components/admin/AdminDashboard';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -53,7 +54,8 @@ function App() {
         <Route path="/create-events" element={<CreateEvent />} />
         <Route path="/admin-events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
-
+        <Route path="/role-selection" element={<RoleSelection />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
       </Routes>
     </Router>
   );

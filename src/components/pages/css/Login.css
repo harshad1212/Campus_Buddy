@@ -81,7 +81,7 @@
 }
 
 .login-form button {
-  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  background: linear-gradient(90deg, #dde8fa, #2563eb);
   color: white;
   font-weight: 600;
   font-size: 1rem;
@@ -130,7 +130,7 @@
 
 /* -------- Admin Section -------- */
 .admin-section {
-  margin-top: 2rem;
+  margin-top: 1rem;
   background: #f9fafb;
   border-radius: 12px;
   padding: 1rem;

@@ -32,7 +32,7 @@ const AdminLogin = () => {
 
       localStorage.setItem("token", data.token);
       alert("Welcome Admin!");
-      navigate("/admin/dashboard");
+      navigate("/admin-dashboard");
     } catch (err) {
       setLoading(false);
       console.error("Admin Login Error:", err);
