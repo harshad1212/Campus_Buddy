@@ -16,9 +16,7 @@ import MyResources from './components/pages/myResources';
 import Events from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvents';
 import AdminEvents from './components/Events/AdminEvents';
-import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import RoleSelection from "./components/pages/RoleSelection";
-import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -33,11 +31,9 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/get-started" element={<RoleSelection />} />
-        <Route path="/register/superadmin" element={<RegisterSuperAdmin />} />
         <Route path='/register-user' element={<RegisterUser />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-        <Route path="/superadmin" element={<SuperAdminDashboard />} />
         <Route path="/home" element={currentUser ? <Home /> : <Navigate to="/login" replace />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />

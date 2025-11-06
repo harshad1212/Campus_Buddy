@@ -55,7 +55,7 @@ const Login = ({ setCurrentUser }) => {
       setCurrentUser(userData);
 
       // ✅ Role-based redirection
-      if (data.user.role === "admin") navigate("/admin/dashboard");
+      if (data.user.role === "admin") navigate("/admin-dashboard");
       else navigate("/home");
     } catch (err) {
       setLoading(false);
