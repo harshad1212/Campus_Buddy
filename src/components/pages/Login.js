@@ -127,7 +127,7 @@ const Login = ({ setCurrentUser }) => {
         <div className="login-links">
           <p>
             Don’t have an account?{" "}
-            <Link to="/register" className="link-primary">
+            <Link to="/register-user" className="link-primary">
               Register
             </Link>
           </p>

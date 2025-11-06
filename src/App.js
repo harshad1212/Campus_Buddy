@@ -16,14 +16,11 @@ import MyResources from './components/pages/myResources';
 import Events from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvents';
 import AdminEvents from './components/Events/AdminEvents';
-import RoleBasedRegister from './components/auth/RoleBasedRegister';
+import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import RoleSelection from "./components/pages/RoleSelection";
-import RegisterTeacher from "./components/pages/RegisterTeacher";
 import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
-import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
-
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
@@ -33,9 +30,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/get-started" element={<RoleSelection />} />
-        <Route path="/register/teacher" element={<RegisterTeacher />} />
         <Route path="/register/superadmin" element={<RegisterSuperAdmin />} />
-        <Route path="/register" element={<RoleBasedRegister />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
         <Route path="/superadmin" element={<SuperAdminDashboard />} />
