@@ -1,66 +1,85 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Loader2, RefreshCcw } from "lucide-react";
 
-const AdminDashboard = ({ currentUser }) => {
+const AdminDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [message, setMessage] = useState("");
 
+  // ✅ Load admin from localStorage
+  const currentUser = JSON.parse(localStorage.getItem("user"));
   const universityCode = currentUser?.universityCode;
 
   useEffect(() => {
+    console.log("🎓 Admin loaded:", currentUser);
+    console.log("🏫 University Code:", universityCode);
     if (universityCode) fetchRequests();
   }, [universityCode]);
 
-  // ✅ Fetch all pending requests for this admin’s university
+  // ✅ Fetch all pending registration requests
   const fetchRequests = async () => {
+    if (!universityCode) {
+      setMessage("⚠️ No university code found for this admin.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:4000/api/registerrequests/${universityCode}`
+        `http://localhost:4000/api/admin/pending-requests/${universityCode}`
       );
       const data = await res.json();
-      setRequests(data);
+
+      if (res.ok) {
+        setRequests(data);
+        console.log("✅ Loaded pending requests:", data);
+      } else {
+        setMessage(data.error || "Failed to fetch requests");
+      }
     } catch (err) {
-      console.error("Error fetching requests:", err);
+      console.error("❌ Error fetching requests:", err);
+      setMessage("Server error while fetching requests");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Handle approve or reject
+  // ✅ Handle approve/reject actions
   const handleAction = async (id, action) => {
     setLoading(true);
     try {
       const endpoint =
         action === "approve"
-          ? `/api/approve-request/${id}`
-          : `/api/reject-request/${id}`;
+          ? `/api/admin/approve-request/${id}`
+          : `/api/admin/reject-request/${id}`;
 
       const res = await fetch(`http://localhost:4000${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      const data = await res.json();
 
+      const data = await res.json();
       if (res.ok) {
-        alert(data.message);
-        fetchRequests();
+        setMessage(data.message);
+        fetchRequests(); // refresh list
       } else {
-        alert(data.error || "Action failed");
+        setMessage(data.error || "Action failed");
       }
     } catch (err) {
-      console.error("Action Error:", err);
-      alert("Server error");
+      console.error("❌ Action Error:", err);
+      setMessage("Server error while performing action");
     } finally {
       setLoading(false);
+      setTimeout(() => setMessage(""), 3000);
     }
   };
 
+  // ✅ Filter by search
   const filteredRequests = requests.filter(
     (r) =>
-      r.name.toLowerCase().includes(search.toLowerCase()) ||
-      r.email.toLowerCase().includes(search.toLowerCase())
+      r.name?.toLowerCase().includes(search.toLowerCase()) ||
+      r.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -70,6 +89,7 @@ const AdminDashboard = ({ currentUser }) => {
           Admin Dashboard
         </h2>
 
+        {/* 🔍 Search & Refresh */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <input
             type="text"
@@ -80,12 +100,20 @@ const AdminDashboard = ({ currentUser }) => {
           />
           <button
             onClick={fetchRequests}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all"
           >
-            Refresh
+            <RefreshCcw size={18} /> Refresh
           </button>
         </div>
 
+        {/* ✅ Status message */}
+        {message && (
+          <p className="text-center text-indigo-700 font-medium mb-4">
+            {message}
+          </p>
+        )}
+
+        {/* ✅ Loader */}
         {loading ? (
           <div className="flex justify-center items-center h-48">
             <Loader2 className="animate-spin text-indigo-500" size={36} />
@@ -102,8 +130,8 @@ const AdminDashboard = ({ currentUser }) => {
                   <th className="px-4 py-3 text-left">Name</th>
                   <th className="px-4 py-3 text-left">Email</th>
                   <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">University</th>
-                  <th className="px-4 py-3 text-center">Action</th>
+                  <th className="px-4 py-3 text-left">Requested On</th>
+                  <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -119,8 +147,8 @@ const AdminDashboard = ({ currentUser }) => {
                     <td className="px-4 py-3 capitalize text-gray-700">
                       {req.role}
                     </td>
-                    <td className="px-4 py-3 text-gray-700">
-                      {req.universityCode}
+                    <td className="px-4 py-3 text-gray-500">
+                      {new Date(req.createdAt).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 text-center flex justify-center gap-2">
                       <button

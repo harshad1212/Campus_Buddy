@@ -53,7 +53,7 @@ function App() {
         <Route path="/admin-events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
         <Route path="/role-selection" element={<RoleSelection />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard setCurrentUser={setCurrentUser} />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard currentUser={currentUser} />} />
       </Routes>
     </Router>
   );
