@@ -15,11 +15,20 @@ const ChatPage = ({ currentUser }) => {
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
 
-  // Fetch initial data
+  // ✅ Ask for browser notification permission once
   useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // ✅ Fetch initial users and rooms
+  useEffect(() => {
+     if (!currentUser?.token) return;
     async function fetchInitialData() {
       try {
-        const apiBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+        const apiBase =
+          process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
         const [roomsRes, usersRes] = await Promise.all([
           fetch(`${apiBase}/api/rooms`, {
             headers: { Authorization: `Bearer ${currentUser.token}` },
@@ -31,6 +40,7 @@ const ChatPage = ({ currentUser }) => {
 
         const roomsData = await roomsRes.json();
         const usersData = await usersRes.json();
+
         setRooms(roomsData);
         setUsers(usersData.map((u) => ({ ...u, unreadCount: 0 })));
       } catch (err) {
@@ -40,10 +50,11 @@ const ChatPage = ({ currentUser }) => {
     fetchInitialData();
   }, [currentUser]);
 
-  // Socket listeners
+  // ✅ Socket listeners
   useEffect(() => {
     if (!socket) return;
 
+    // When a room updates
     const onRoomsUpdate = (updatedRoom) => {
       setRooms((prev) => {
         const idx = prev.findIndex((r) => r._id === updatedRoom._id);
@@ -52,11 +63,13 @@ const ChatPage = ({ currentUser }) => {
         copy[idx] = { ...copy[idx], ...updatedRoom };
         return copy.sort(
           (a, b) =>
-            new Date(b.lastMessage?.createdAt || 0) - new Date(a.lastMessage?.createdAt || 0)
+            new Date(b.lastMessage?.createdAt || 0) -
+            new Date(a.lastMessage?.createdAt || 0)
         );
       });
     };
 
+    // When user list updates
     const onUserList = (list) => {
       const uniqueUsers = Array.from(new Map(list.map((u) => [u._id, u])).values());
       setUsers((prev) =>
@@ -67,29 +80,47 @@ const ChatPage = ({ currentUser }) => {
       );
     };
 
+    // Presence (online/offline)
     const onPresence = ({ userId, online, lastSeen }) =>
       setUsers((prev) =>
         prev.map((u) => (u._id === userId ? { ...u, online, lastSeen } : u))
       );
 
+    // ✅ Handle new incoming message
     const onNewMessage = (msg) => {
       const senderId = msg.sender._id;
-      if (selectedUser?._id === senderId) return;
+
+      // If chat with sender is open → do not increment unread
+      const isActive = selectedUser?._id === senderId;
 
       setUsers((prev) =>
         prev.map((u) =>
           u._id === senderId
-            ? { ...u, unreadCount: (u.unreadCount || 0) + 1 }
+            ? { ...u, unreadCount: isActive ? 0 : (u.unreadCount || 0) + 1 }
             : u
         )
       );
+
+      // 🔔 Show browser notification if message not from active chat
+      if (Notification.permission !== "granted") {
+  Notification.requestPermission();
+}
+
+if (Notification.permission === "granted" && msg.sender._id !== currentUser._id) {
+  if (!document.hasFocus() || !isActive) {
+    showNotification(msg);
+  }
+}
+
     };
 
+    // Attach listeners
     socket.on("room-upsert", onRoomsUpdate);
     socket.on("user-list", onUserList);
     socket.on("presence", onPresence);
     socket.on("new-message", onNewMessage);
 
+    // Cleanup
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
       socket.off("user-list", onUserList);
@@ -98,6 +129,26 @@ const ChatPage = ({ currentUser }) => {
     };
   }, [socket, selectedUser]);
 
+  // 🔔 Browser Notification logic
+  const showNotification = (message) => {
+    const senderName = message.sender?.name || "New Message";
+    const body = message.text || "You received a new message";
+
+    const notification = new Notification(senderName, {
+      body,
+      icon: message.sender?.avatarUrl || "/default-avatar.png",
+      tag: message.sender?._id, // avoid stacking duplicates
+    });
+
+    notification.onclick = () => {
+      window.focus();
+      const sender = users.find((u) => u._id === message.sender._id);
+      if (sender) handleStartPrivateChat(sender);
+      notification.close();
+    };
+  };
+
+  // ✅ Start or open a private chat
   const handleStartPrivateChat = async (user) => {
     setUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
@@ -118,7 +169,8 @@ const ChatPage = ({ currentUser }) => {
     }
 
     try {
-      const apiBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+      const apiBase =
+        process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
       const res = await fetch(`${apiBase}/api/private`, {
         method: "POST",
         headers: {
@@ -148,7 +200,9 @@ const ChatPage = ({ currentUser }) => {
             className="w-12 h-12 rounded-full object-cover border border-gray-200"
           />
           <div>
-            <div className="text-sm font-semibold text-gray-900">{currentUser.name}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {currentUser.name}
+            </div>
             <div className="text-xs text-gray-500">
               <OnlineStatus user={{ ...currentUser, online: true }} small />
             </div>

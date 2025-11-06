@@ -47,7 +47,13 @@ UserRow.propTypes = {
   onClick: PropTypes.func.isRequired,
 };
 
-const UsersList = ({ users, currentUserId, onStartPrivateChat, activeChatId, socket }) => {
+const UsersList = ({
+  users,
+  currentUserId,
+  onStartPrivateChat,
+  activeChatId,
+  socket,
+}) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [localUsers, setLocalUsers] = useState(users);
 
@@ -55,22 +61,41 @@ const UsersList = ({ users, currentUserId, onStartPrivateChat, activeChatId, soc
     setLocalUsers(users);
   }, [users]);
 
+  // 🟢 Request Notification Permission once when component mounts
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission !== "granted") {
+      Notification.requestPermission();
+    }
+  }, []);
+
   // 🟢 Listen for new incoming messages
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (msg) => {
-      // Only count if message is NOT from current user
+      // Ignore messages from current user
       if (msg.sender?._id === currentUserId) return;
 
-      // Identify which chat/user this message belongs to
       const senderId = msg.sender?._id || msg.sender;
+      const isChatOpen =
+        activeChatId === msg.chat?._id || msg.chat === activeChatId;
+
+      // 🟢 Trigger browser notification if chat not open
+      if (
+        !isChatOpen &&
+        "Notification" in window &&
+        Notification.permission === "granted"
+      ) {
+        new Notification(msg.sender?.name || "New message", {
+          body: msg.content || "You have a new message",
+          icon: msg.sender?.avatarUrl || "/default-avatar.png",
+        });
+      }
 
       // Increment unread count if chat isn't open
       setLocalUsers((prev) =>
         prev.map((u) => {
           if (u._id === senderId) {
-            const isChatOpen = activeChatId === msg.chat?._id || msg.chat === activeChatId;
             return {
               ...u,
               unreadCount: isChatOpen ? 0 : (u.unreadCount || 0) + 1,
@@ -86,7 +111,7 @@ const UsersList = ({ users, currentUserId, onStartPrivateChat, activeChatId, soc
   }, [socket, currentUserId, activeChatId]);
 
   const handleClickUser = (user) => {
-    // Clear unread count when chat opens
+    // Clear unread count when opening chat
     setLocalUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
     );

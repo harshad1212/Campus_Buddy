@@ -114,7 +114,7 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
           }
           return [...prev, msg];
         });
-        scrollToBottom();
+       
       }
     };
 
@@ -151,6 +151,19 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
       socket.off("typing", handleTyping);
     };
   }, [socket, chatId]);
+
+
+  // 🟢 Auto-scroll when new message arrives (only if user is at bottom)
+useEffect(() => {
+  const el = listRef.current;
+  if (!el) return;
+
+  const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+  if (isAtBottom) {
+    scrollToBottom();
+  }
+}, [messages]);
+
 
   // --- Send message
   const handleSend = async ({ content, attachments }) => {
