@@ -19,6 +19,7 @@ import RoleSelection from "./components/pages/RoleSelection";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
+import RegisterUser from './components/pages/RegisterUser';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -30,7 +31,6 @@ function App() {
         <Route path="/" element={<Welcome />} />
         <Route path="/get-started" element={<RoleSelection />} />
         <Route path='/register-user' element={<RegisterUser />} />
-        <Route path="/register/superadmin" element={<RegisterSuperAdmin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
         <Route path="/home" element={currentUser ? <Home /> : <Navigate to="/login" replace />} />
