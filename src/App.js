@@ -21,6 +21,8 @@ import RoleSelection from "./components/pages/RoleSelection";
 import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
+import AdminDashboard from './components/admin/AdminDashboard';
+
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
@@ -48,6 +50,7 @@ function App() {
         <Route path="/create-events" element={<CreateEvent />} />
         <Route path="/admin-events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard setCurrentUser={setCurrentUser} />} />
       </Routes>
     </Router>
   );

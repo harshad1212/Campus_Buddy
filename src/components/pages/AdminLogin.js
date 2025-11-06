@@ -12,33 +12,45 @@ const AdminLogin = () => {
   const navigate = useNavigate();
 
   const handleAdminLogin = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      const res = await fetch("http://localhost:4000/api/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: "admin" }), // ✅ Fixed role
-      });
+  try {
+    const res = await fetch("http://localhost:4000/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }), // no need to force role here
+    });
 
-      const data = await res.json();
-      setLoading(false);
+    const data = await res.json();
+    setLoading(false);
 
-      if (!res.ok) {
-        alert(data.error || "Invalid credentials");
-        return;
-      }
-
-      localStorage.setItem("token", data.token);
-      alert("Welcome Admin!");
-      navigate("/admin-dashboard");
-    } catch (err) {
-      setLoading(false);
-      console.error("Admin Login Error:", err);
-      alert("Server error. Try again later.");
+    if (!res.ok) {
+      alert(data.error || "Invalid credentials");
+      return;
     }
-  };
+
+    // ✅ Check if user is actually an admin
+    if (data.user.role !== "admin") {
+      alert("Access denied. Only admins can log in here.");
+      return;
+    }
+
+    // ✅ Save both token and user info
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    console.log("✅ Logged in admin:", data.user);
+
+    alert(`Welcome, ${data.user.name}!`);
+    navigate("/admin-dashboard");
+  } catch (err) {
+    setLoading(false);
+    console.error("Admin Login Error:", err);
+    alert("Server error. Try again later.");
+  }
+};
+
 
   return (
     <div className="login-wrapper">
