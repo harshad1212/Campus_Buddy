@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Search } from "lucide-react";
+import { Search, UserPlus } from "lucide-react";
 
-const UserRow = ({ user, onClick }) => (
-  <button
-    onClick={() => onClick(user)}
-    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 focus:outline-none focus:bg-blue-100 transition rounded-xl text-left group"
-  >
+const UserRow = ({ user, onClick, onAddFriend }) => (
+  <div className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition rounded-xl text-left group">
     {/* Avatar */}
     <div className="relative">
       <img
@@ -28,7 +25,6 @@ const UserRow = ({ user, onClick }) => (
           {user.name}
         </span>
 
-        {/* 🔵 Unread badge */}
         {user.unreadCount > 0 && (
           <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
             {user.unreadCount}
@@ -39,12 +35,23 @@ const UserRow = ({ user, onClick }) => (
         {user.online ? "Online" : `Last seen ${user.lastSeen || "recently"}`}
       </div>
     </div>
-  </button>
+
+    {/* Add Friend Button */}
+    {!user.isFriend && (
+      <button
+        onClick={() => onAddFriend(user)}
+        className="p-2 rounded-full hover:bg-blue-100 text-blue-600 transition"
+      >
+        <UserPlus size={16} />
+      </button>
+    )}
+  </div>
 );
 
 UserRow.propTypes = {
   user: PropTypes.object.isRequired,
-  onClick: PropTypes.func.isRequired,
+  onClick: PropTypes.func,
+  onAddFriend: PropTypes.func,
 };
 
 const UsersList = ({
@@ -53,34 +60,59 @@ const UsersList = ({
   onStartPrivateChat,
   activeChatId,
   socket,
+  token,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [localUsers, setLocalUsers] = useState(users);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     setLocalUsers(users);
   }, [users]);
 
-  // 🟢 Request Notification Permission once when component mounts
+// ✅ Handle incoming friend requests
+useEffect(() => {
+  if (!socket) return;
+
+  const handleFriendRequest = ({ from }) => {
+    if (Notification.permission === "granted") {
+      const n = new Notification("New Friend Request", {
+        body: `${from.name} sent you a friend request!`,
+        icon: from.avatarUrl || "/default-avatar.png",
+      });
+      n.onclick = () => {
+        window.focus();
+        n.close();
+      };
+    } else {
+      alert(`${from.name} sent you a friend request!`);
+    }
+  };
+
+  socket.on("friend-request", handleFriendRequest);
+  return () => socket.off("friend-request", handleFriendRequest);
+}, [socket]);
+
+
+
+  // Request notification permission
   useEffect(() => {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission();
     }
   }, []);
 
-  // 🟢 Listen for new incoming messages
+  // Handle new message notifications
   useEffect(() => {
     if (!socket) return;
 
     const handleNewMessage = (msg) => {
-      // Ignore messages from current user
       if (msg.sender?._id === currentUserId) return;
 
       const senderId = msg.sender?._id || msg.sender;
       const isChatOpen =
         activeChatId === msg.chat?._id || msg.chat === activeChatId;
 
-      // 🟢 Trigger browser notification if chat not open
       if (
         !isChatOpen &&
         "Notification" in window &&
@@ -92,17 +124,12 @@ const UsersList = ({
         });
       }
 
-      // Increment unread count if chat isn't open
       setLocalUsers((prev) =>
-        prev.map((u) => {
-          if (u._id === senderId) {
-            return {
-              ...u,
-              unreadCount: isChatOpen ? 0 : (u.unreadCount || 0) + 1,
-            };
-          }
-          return u;
-        })
+        prev.map((u) =>
+          u._id === senderId
+            ? { ...u, unreadCount: isChatOpen ? 0 : (u.unreadCount || 0) + 1 }
+            : u
+        )
       );
     };
 
@@ -111,22 +138,66 @@ const UsersList = ({
   }, [socket, currentUserId, activeChatId]);
 
   const handleClickUser = (user) => {
-    // Clear unread count when opening chat
+    if (!user.isFriend) return;
     setLocalUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
     );
     onStartPrivateChat(user);
   };
 
-  const filteredUsers = localUsers
-    .filter((u) => u._id !== currentUserId)
-    .filter((u) => u.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // ✅ Handle add friend request
+// ✅ Socket-based friend request
+const handleAddFriend = (user) => {
+  if (!socket) return alert("Socket not connected");
+
+  socket.emit("send-friend-request", user._id);
+  alert(`Friend request sent to ${user.name}`);
+};
+
+
+  // ✅ Handle search (dynamic)
+  useEffect(() => {
+    const fetchUsers = async () => {
+      if (!searchTerm.trim()) {
+        setIsSearching(false);
+        setLocalUsers(users);
+        return;
+      }
+
+      setIsSearching(true);
+      try {
+        const apiBase =
+          process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+        const res = await fetch(
+          `${apiBase}/api/users?search=${encodeURIComponent(searchTerm)}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await res.json();
+
+        // Mark users as friends if already in the friend list
+        const merged = data.map((u) => ({
+          ...u,
+          isFriend: users.some((f) => f._id === u._id),
+        }));
+        setLocalUsers(merged);
+      } catch (err) {
+        console.error("Search failed:", err);
+      }
+    };
+
+    const delay = setTimeout(fetchUsers, 400);
+    return () => clearTimeout(delay);
+  }, [searchTerm, token, users]);
+
 
   return (
     <div className="flex flex-col h-full bg-white shadow-lg rounded-2xl border border-gray-200">
-      {/* Header */}
       <div className="px-5 py-4 border-b bg-blue-50 rounded-t-2xl">
-        <h2 className="text-sm font-semibold text-blue-700">All Users</h2>
+        <h2 className="text-sm font-semibold text-blue-700">
+          {isSearching ? "Search Results" : "Friends"}
+        </h2>
       </div>
 
       {/* Search */}
@@ -145,13 +216,18 @@ const UsersList = ({
 
       {/* User List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredUsers.length === 0 ? (
+        {localUsers.length === 0 ? (
           <div className="p-5 text-center text-gray-400 text-sm">
             No users found
           </div>
         ) : (
-          filteredUsers.map((user) => (
-            <UserRow key={user._id} user={user} onClick={handleClickUser} />
+          localUsers.map((user) => (
+            <UserRow
+              key={user._id}
+              user={user}
+              onClick={handleClickUser}
+              onAddFriend={handleAddFriend}
+            />
           ))
         )}
       </div>
@@ -165,6 +241,7 @@ UsersList.propTypes = {
   currentUserId: PropTypes.string.isRequired,
   activeChatId: PropTypes.string,
   socket: PropTypes.object,
+  token: PropTypes.string.isRequired,
 };
 
 export default UsersList;

@@ -120,12 +120,39 @@ if (Notification.permission === "granted" && msg.sender._id !== currentUser._id)
     socket.on("presence", onPresence);
     socket.on("new-message", onNewMessage);
 
+    // ✅ Handle incoming friend request
+const onFriendRequest = ({ from }) => {
+  // Show a browser notification
+  if (Notification.permission === "granted") {
+    const n = new Notification("New Friend Request", {
+      body: `${from.name} sent you a friend request!`,
+      icon: from.avatarUrl || "/default-avatar.png",
+    });
+
+    n.onclick = () => {
+      window.focus();
+      n.close();
+    };
+  } else if (Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+
+  // Optionally show in UI toast/alert
+  alert(`${from.name} sent you a friend request`);
+};
+
+// Attach listener
+socket.on("friend-request", onFriendRequest);
+
+
     // Cleanup
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
       socket.off("user-list", onUserList);
       socket.off("presence", onPresence);
       socket.off("new-message", onNewMessage);
+      socket.off("friend-request", onFriendRequest);
+
     };
   }, [socket, selectedUser]);
 
@@ -212,10 +239,13 @@ if (Notification.permission === "granted" && msg.sender._id !== currentUser._id)
         {/* Users List */}
         <div className="flex-1 overflow-y-auto p-2">
           <UsersList
-            users={users}
-            currentUserId={currentUser._id}
-            onStartPrivateChat={handleStartPrivateChat}
-          />
+              users={users}
+              currentUserId={currentUser._id}
+              onStartPrivateChat={handleStartPrivateChat}
+              socket={socket}
+              token={currentUser.token}
+            />
+
         </div>
 
         {/* Last sync */}
