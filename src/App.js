@@ -17,13 +17,12 @@ import Events from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvents';
 import AdminEvents from './components/Events/AdminEvents';
 import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
-import RoleBasedRegister from './components/auth/RoleBasedRegister';
 import RoleSelection from "./components/pages/RoleSelection";
-import RegisterTeacher from "./components/pages/RegisterTeacher";
 import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
+import RegisterUser from './components/pages/RegisterUser';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -34,9 +33,8 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/get-started" element={<RoleSelection />} />
-        <Route path="/register/teacher" element={<RegisterTeacher />} />
         <Route path="/register/superadmin" element={<RegisterSuperAdmin />} />
-        <Route path="/register" element={<RoleBasedRegister />} />
+        <Route path='/register-user' element={<RegisterUser />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
         <Route path="/superadmin" element={<SuperAdminDashboard />} />
@@ -55,7 +53,7 @@ function App() {
         <Route path="/admin-events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
         <Route path="/role-selection" element={<RoleSelection />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard setCurrentUser={setCurrentUser} />} />
       </Routes>
     </Router>
   );
