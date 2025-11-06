@@ -6,7 +6,6 @@ import Login from './components/pages/Login';
 import Home from './components/pages/Home';
 import About from './components/pages/AboutUs';
 import Contact from './components/pages/ContactUs';
-import Register from './components/pages/Register';
 import ForgotPassword from './components/pages/ForgotPassword';
 import ChatPage from './components/pages/ChatPage';
 import ResetPassword from './components/pages/ResetPassword';
@@ -16,9 +15,7 @@ import MyResources from './components/pages/myResources';
 import Events from './components/Events/Events';
 import CreateEvent from './components/Events/CreateEvents';
 import AdminEvents from './components/Events/AdminEvents';
-import SuperAdminDashboard from './components/admin/SuperAdminDashboard';
 import RoleSelection from "./components/pages/RoleSelection";
-import RegisterSuperAdmin from "./components/pages/RegisterSuperAdmin";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -32,14 +29,13 @@ function App() {
       <Routes>
         <Route path="/" element={<Welcome />} />
         <Route path="/get-started" element={<RoleSelection />} />
+        <Route path='/register-user' element={<RegisterUser />} />
         <Route path="/register/superadmin" element={<RegisterSuperAdmin />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
-        <Route path="/superadmin" element={<SuperAdminDashboard />} />
         <Route path="/home" element={currentUser ? <Home /> : <Navigate to="/login" replace />} />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
