@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Welcome from './components/pages/Welcome';
 import Login from './components/pages/Login';
 import Home from './components/pages/Home';
-import About from './components/pages/AboutUs';
+import AboutUs from './components/pages/AboutUs';
 import Contact from './components/pages/ContactUs';
 import ForgotPassword from './components/pages/ForgotPassword';
 import ChatPage from './components/pages/ChatPage';
@@ -34,7 +34,7 @@ function App() {
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />
         <Route path="/home" element={currentUser ? <Home /> : <Navigate to="/login" replace />} />
-        <Route path="/about" element={<About />} />
+        <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
