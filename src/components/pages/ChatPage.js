@@ -14,47 +14,76 @@ const ChatPage = ({ currentUser }) => {
   const [users, setUsers] = useState([]);
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
+  const [friendData, setFriendData] = useState({
+  friends: [],
+  received: [],
+  sent: [],
+});
 
-  // ✅ Ask for browser notification permission once
+
+  // Ask for notification permission
   useEffect(() => {
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  // ✅ Fetch initial users and rooms
-  useEffect(() => {
-     if (!currentUser?.token) return;
-    async function fetchInitialData() {
-      try {
-        const apiBase =
-          process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
-        const [roomsRes, usersRes] = await Promise.all([
-          fetch(`${apiBase}/api/rooms`, {
-            headers: { Authorization: `Bearer ${currentUser.token}` },
-          }),
-          fetch(`${apiBase}/api/users`, {
-            headers: { Authorization: `Bearer ${currentUser.token}` },
-          }),
-        ]);
+  // Fetch initial users and rooms
+   // 🔁 Fetch initial users and rooms
+  async function fetchInitialData() {
+    if (!currentUser?.token) return;
 
-        const roomsData = await roomsRes.json();
-        const usersData = await usersRes.json();
+    try {
+      const apiBase =
+        process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-        setRooms(roomsData);
-        setUsers(usersData.map((u) => ({ ...u, unreadCount: 0 })));
-      } catch (err) {
-        console.error("Failed to fetch initial data:", err);
-      }
+      const [roomsRes, usersRes] = await Promise.all([
+        fetch(`${apiBase}/api/rooms`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }),
+        fetch(`${apiBase}/api/users`, {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }),
+      ]);
+
+      const roomsData = await roomsRes.json();
+      const data = await usersRes.json();
+      const usersData = data.users;
+
+      setRooms(roomsData);
+      setUsers(usersData.map((u) => ({ ...u, unreadCount: 0 })));
+      setFriendData({
+        friends: data.currentUserFriends,
+        received: data.currentUserFriendRequests,
+        sent: data.currentUserSentRequests,
+      });
+    } catch (err) {
+      console.error("Failed to fetch initial data:", err);
     }
+  }
+
+  useEffect(() => {
     fetchInitialData();
   }, [currentUser]);
 
-  // ✅ Socket listeners
+    // 👇 Re-fetch on tab focus
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchInitialData();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
+
+  // Socket listeners
   useEffect(() => {
     if (!socket) return;
 
-    // When a room updates
     const onRoomsUpdate = (updatedRoom) => {
       setRooms((prev) => {
         const idx = prev.findIndex((r) => r._id === updatedRoom._id);
@@ -69,9 +98,16 @@ const ChatPage = ({ currentUser }) => {
       });
     };
 
-    // When user list updates
     const onUserList = (list) => {
-      const uniqueUsers = Array.from(new Map(list.map((u) => [u._id, u])).values());
+      console.log("Received user list:", list);
+      // Keep only users from the same university
+      const sameUniversityUsers = list.filter(
+        (u) => u.universityId === currentUser.universityId
+      );
+      const uniqueUsers = Array.from(
+        new Map(sameUniversityUsers.map((u) => [u._id, u])).values()
+      );
+
       setUsers((prev) =>
         uniqueUsers.map((u) => {
           const existing = prev.find((p) => p._id === u._id);
@@ -80,17 +116,15 @@ const ChatPage = ({ currentUser }) => {
       );
     };
 
-    // Presence (online/offline)
     const onPresence = ({ userId, online, lastSeen }) =>
       setUsers((prev) =>
-        prev.map((u) => (u._id === userId ? { ...u, online, lastSeen } : u))
+        prev.map((u) =>
+          u._id === userId ? { ...u, online, lastSeen } : u
+        )
       );
 
-    // ✅ Handle new incoming message
     const onNewMessage = (msg) => {
       const senderId = msg.sender._id;
-
-      // If chat with sender is open → do not increment unread
       const isActive = selectedUser?._id === senderId;
 
       setUsers((prev) =>
@@ -101,62 +135,42 @@ const ChatPage = ({ currentUser }) => {
         )
       );
 
-      // 🔔 Show browser notification if message not from active chat
-      if (Notification.permission !== "granted") {
-  Notification.requestPermission();
-}
-
-if (Notification.permission === "granted" && msg.sender._id !== currentUser._id) {
-  if (!document.hasFocus() || !isActive) {
-    showNotification(msg);
-  }
-}
-
+      if (Notification.permission === "granted" && !isActive) {
+        showNotification(msg);
+      }
     };
 
-    // Attach listeners
+    const onFriendRequest = ({ from }) => {
+      if (Notification.permission === "granted") {
+        const n = new Notification("New Friend Request", {
+          body: `${from.name} sent you a friend request!`,
+          icon: from.avatarUrl || "/default-avatar.png",
+        });
+        n.onclick = () => {
+          window.focus();
+          n.close();
+        };
+      } else if (Notification.permission === "default") {
+        Notification.requestPermission();
+      }
+      alert(`${from.name} sent you a friend request`);
+    };
+
     socket.on("room-upsert", onRoomsUpdate);
     socket.on("user-list", onUserList);
     socket.on("presence", onPresence);
     socket.on("new-message", onNewMessage);
+    socket.on("friend-request", onFriendRequest);
 
-    // ✅ Handle incoming friend request
-const onFriendRequest = ({ from }) => {
-  // Show a browser notification
-  if (Notification.permission === "granted") {
-    const n = new Notification("New Friend Request", {
-      body: `${from.name} sent you a friend request!`,
-      icon: from.avatarUrl || "/default-avatar.png",
-    });
-
-    n.onclick = () => {
-      window.focus();
-      n.close();
-    };
-  } else if (Notification.permission === "default") {
-    Notification.requestPermission();
-  }
-
-  // Optionally show in UI toast/alert
-  alert(`${from.name} sent you a friend request`);
-};
-
-// Attach listener
-socket.on("friend-request", onFriendRequest);
-
-
-    // Cleanup
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
       socket.off("user-list", onUserList);
       socket.off("presence", onPresence);
       socket.off("new-message", onNewMessage);
       socket.off("friend-request", onFriendRequest);
-
     };
-  }, [socket, selectedUser]);
+  }, [socket, selectedUser, currentUser.universityId]);
 
-  // 🔔 Browser Notification logic
   const showNotification = (message) => {
     const senderName = message.sender?.name || "New Message";
     const body = message.text || "You received a new message";
@@ -164,7 +178,7 @@ socket.on("friend-request", onFriendRequest);
     const notification = new Notification(senderName, {
       body,
       icon: message.sender?.avatarUrl || "/default-avatar.png",
-      tag: message.sender?._id, // avoid stacking duplicates
+      tag: message.sender?._id,
     });
 
     notification.onclick = () => {
@@ -175,7 +189,6 @@ socket.on("friend-request", onFriendRequest);
     };
   };
 
-  // ✅ Start or open a private chat
   const handleStartPrivateChat = async (user) => {
     setUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
@@ -239,13 +252,15 @@ socket.on("friend-request", onFriendRequest);
         {/* Users List */}
         <div className="flex-1 overflow-y-auto p-2">
           <UsersList
-              users={users}
-              currentUserId={currentUser._id}
-              onStartPrivateChat={handleStartPrivateChat}
-              socket={socket}
-              token={currentUser.token}
-            />
-
+            users={users}
+            currentUserId={currentUser._id}
+            currentUserUniversityId={currentUser.universityId}
+            onStartPrivateChat={handleStartPrivateChat}
+            socket={socket}
+            token={currentUser.token}
+            activeChatId={activeRoomId}
+            friendData={friendData}
+          />
         </div>
 
         {/* Last sync */}
@@ -280,6 +295,7 @@ ChatPage.propTypes = {
     name: PropTypes.string.isRequired,
     avatarUrl: PropTypes.string,
     token: PropTypes.string.isRequired,
+    universityId: PropTypes.string.isRequired,
   }).isRequired,
 };
 

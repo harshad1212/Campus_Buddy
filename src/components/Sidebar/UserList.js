@@ -2,8 +2,19 @@ import React, { useState, useEffect } from "react";
 import PropTypes from "prop-types";
 import { Search, UserPlus } from "lucide-react";
 
-const UserRow = ({ user, onClick, onAddFriend }) => (
-  <div className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition rounded-xl text-left group">
+// ✅ User Row Component
+const UserRow = ({
+  user,
+  onClick,
+  onAddFriend,
+  onCancelRequest,
+  onAcceptRequest,
+  onRejectRequest,
+}) => (
+  <div
+    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition rounded-xl cursor-pointer"
+    onClick={() => onClick(user)}
+  >
     {/* Avatar */}
     <div className="relative">
       <img
@@ -24,7 +35,6 @@ const UserRow = ({ user, onClick, onAddFriend }) => (
         <span className="text-sm font-semibold truncate text-gray-900">
           {user.name}
         </span>
-
         {user.unreadCount > 0 && (
           <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full min-w-[20px] text-center">
             {user.unreadCount}
@@ -36,171 +46,247 @@ const UserRow = ({ user, onClick, onAddFriend }) => (
       </div>
     </div>
 
-    {/* Add Friend Button */}
-    {!user.isFriend && (
-      <button
-        onClick={() => onAddFriend(user)}
-        className="p-2 rounded-full hover:bg-blue-100 text-blue-600 transition"
-      >
-        <UserPlus size={16} />
-      </button>
-    )}
+    {/* Action Buttons */}
+    <div className="flex items-center gap-2">
+      {!user.isFriend && !user.status && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddFriend(user);
+          }}
+          className="p-2 rounded-full hover:bg-blue-100 text-blue-600 transition"
+        >
+          <UserPlus size={16} />
+        </button>
+      )}
+
+      {user.status === "sent" && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCancelRequest(user);
+          }}
+          className="text-xs text-gray-500 hover:text-red-500 transition"
+        >
+          Cancel
+        </button>
+      )}
+
+      {user.status === "received" && (
+        <>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onAcceptRequest(user);
+            }}
+            className="text-xs text-green-600 hover:text-green-800 transition"
+          >
+            Accept
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onRejectRequest(user);
+            }}
+            className="text-xs text-red-600 hover:text-red-800 transition"
+          >
+            Reject
+          </button>
+        </>
+      )}
+    </div>
   </div>
 );
 
 UserRow.propTypes = {
   user: PropTypes.object.isRequired,
-  onClick: PropTypes.func,
-  onAddFriend: PropTypes.func,
+  onClick: PropTypes.func.isRequired,
+  onAddFriend: PropTypes.func.isRequired,
 };
 
+// ✅ Main Users List Component
 const UsersList = ({
   users,
   currentUserId,
+  currentUserUniversityId,
   onStartPrivateChat,
-  activeChatId,
-  socket,
   token,
+  friendData,
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [localUsers, setLocalUsers] = useState(users);
-  const [isSearching, setIsSearching] = useState(false);
+  const [localUsers, setLocalUsers] = useState([]);
+  const [viewMode, setViewMode] = useState("friends"); // default view mode
 
+  const apiBase = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+
+  // ✅ Filtering logic
   useEffect(() => {
-    setLocalUsers(users);
-  }, [users]);
+    let filtered = [];
 
-// ✅ Handle incoming friend requests
-useEffect(() => {
-  if (!socket) return;
+    switch (viewMode) {
+      case "friends":
+        filtered = users
+          .filter(
+            (u) =>
+              friendData?.friends?.includes(u._id) &&
+              u.universityId === currentUserUniversityId &&
+              u._id !== currentUserId
+          )
+          .map((u) => ({ ...u, isFriend: true }));
+        break;
 
-  const handleFriendRequest = ({ from }) => {
-    if (Notification.permission === "granted") {
-      const n = new Notification("New Friend Request", {
-        body: `${from.name} sent you a friend request!`,
-        icon: from.avatarUrl || "/default-avatar.png",
+      case "received":
+        filtered = users
+          .filter((u) => friendData?.received?.includes(u._id))
+          .map((u) => ({ ...u, status: "received" }));
+        break;
+
+      case "sent":
+        filtered = users
+          .filter((u) => friendData?.sent?.includes(u._id))
+          .map((u) => ({ ...u, status: "sent" }));
+        break;
+
+      case "blocked":
+        filtered = users
+          .filter((u) => friendData?.blocked?.includes(u._id))
+          .map((u) => ({ ...u, status: "blocked" }));
+        break;
+
+      default:
+        filtered = [];
+    }
+
+    // ✅ Apply search filter
+    if (searchTerm.trim()) {
+      const searched = users
+        .filter(
+          (u) =>
+            u.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            u.universityId === currentUserUniversityId &&
+            u._id !== currentUserId
+        )
+        .map((u) => ({
+          ...u,
+          isFriend: friendData?.friends?.includes(u._id),
+          status: friendData?.received?.includes(u._id)
+            ? "received"
+            : friendData?.sent?.includes(u._id)
+            ? "sent"
+            : friendData?.blocked?.includes(u._id)
+            ? "blocked"
+            : null,
+        }));
+      filtered = searched;
+    }
+
+    setLocalUsers(filtered);
+  }, [
+    users,
+    viewMode,
+    searchTerm,
+    currentUserId,
+    currentUserUniversityId,
+    friendData,
+  ]);
+
+  // ✅ Friend Actions
+  const handleAddFriend = async (user) => {
+    try {
+      const res = await fetch(`${apiBase}/api/friends/send-request/${user._id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
       });
-      n.onclick = () => {
-        window.focus();
-        n.close();
-      };
-    } else {
-      alert(`${from.name} sent you a friend request!`);
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message);
+        setLocalUsers((prev) =>
+          prev.map((u) => (u._id === user._id ? { ...u, status: "sent" } : u))
+        );
+      } else alert(data.error);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to send friend request");
     }
   };
 
-  socket.on("friend-request", handleFriendRequest);
-  return () => socket.off("friend-request", handleFriendRequest);
-}, [socket]);
-
-
-
-  // Request notification permission
-  useEffect(() => {
-    if ("Notification" in window && Notification.permission !== "granted") {
-      Notification.requestPermission();
+  const handleCancelRequest = async (user) => {
+    try {
+      const res = await fetch(`${apiBase}/api/friends/cancel-request/${user._id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLocalUsers((prev) =>
+          prev.map((u) => (u._id === user._id ? { ...u, status: null } : u))
+        );
+      } else alert(data.error);
+    } catch (err) {
+      console.error(err);
     }
-  }, []);
+  };
 
-  // Handle new message notifications
-  useEffect(() => {
-    if (!socket) return;
+  const handleAcceptRequest = async (user) => {
+    try {
+      const res = await fetch(`${apiBase}/api/friends/accept-request/${user._id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLocalUsers((prev) =>
+          prev.map((u) =>
+            u._id === user._id ? { ...u, status: null, isFriend: true } : u
+          )
+        );
+      } else alert(data.error);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
-    const handleNewMessage = (msg) => {
-      if (msg.sender?._id === currentUserId) return;
-
-      const senderId = msg.sender?._id || msg.sender;
-      const isChatOpen =
-        activeChatId === msg.chat?._id || msg.chat === activeChatId;
-
-      if (
-        !isChatOpen &&
-        "Notification" in window &&
-        Notification.permission === "granted"
-      ) {
-        new Notification(msg.sender?.name || "New message", {
-          body: msg.content || "You have a new message",
-          icon: msg.sender?.avatarUrl || "/default-avatar.png",
-        });
-      }
-
-      setLocalUsers((prev) =>
-        prev.map((u) =>
-          u._id === senderId
-            ? { ...u, unreadCount: isChatOpen ? 0 : (u.unreadCount || 0) + 1 }
-            : u
-        )
-      );
-    };
-
-    socket.on("new-message", handleNewMessage);
-    return () => socket.off("new-message", handleNewMessage);
-  }, [socket, currentUserId, activeChatId]);
+  const handleRejectRequest = async (user) => {
+    try {
+      const res = await fetch(`${apiBase}/api/friends/reject-request/${user._id}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setLocalUsers((prev) =>
+          prev.map((u) => (u._id === user._id ? { ...u, status: null } : u))
+        );
+      } else alert(data.error);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleClickUser = (user) => {
-    if (!user.isFriend) return;
-    setLocalUsers((prev) =>
-      prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
-    );
-    onStartPrivateChat(user);
+    if (user.isFriend) onStartPrivateChat(user);
   };
-
-  // ✅ Handle add friend request
-// ✅ Socket-based friend request
-const handleAddFriend = (user) => {
-  if (!socket) return alert("Socket not connected");
-
-  socket.emit("send-friend-request", user._id);
-  alert(`Friend request sent to ${user.name}`);
-};
-
-
-  // ✅ Handle search (dynamic)
-  useEffect(() => {
-    const fetchUsers = async () => {
-      if (!searchTerm.trim()) {
-        setIsSearching(false);
-        setLocalUsers(users);
-        return;
-      }
-
-      setIsSearching(true);
-      try {
-        const apiBase =
-          process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
-        const res = await fetch(
-          `${apiBase}/api/users?search=${encodeURIComponent(searchTerm)}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const data = await res.json();
-
-        // Mark users as friends if already in the friend list
-        const merged = data.map((u) => ({
-          ...u,
-          isFriend: users.some((f) => f._id === u._id),
-        }));
-        setLocalUsers(merged);
-      } catch (err) {
-        console.error("Search failed:", err);
-      }
-    };
-
-    const delay = setTimeout(fetchUsers, 400);
-    return () => clearTimeout(delay);
-  }, [searchTerm, token, users]);
-
 
   return (
     <div className="flex flex-col h-full bg-white shadow-lg rounded-2xl border border-gray-200">
-      <div className="px-5 py-4 border-b bg-blue-50 rounded-t-2xl">
-        <h2 className="text-sm font-semibold text-blue-700">
-          {isSearching ? "Search Results" : "Friends"}
-        </h2>
+      {/* Header */}
+      <div className="px-5 py-4 border-b bg-blue-50 rounded-t-2xl flex justify-between items-center">
+        <h2 className="text-sm font-semibold text-blue-700">User List</h2>
+
+        {/* Dropdown for view mode */}
+        <select
+          value={viewMode}
+          onChange={(e) => setViewMode(e.target.value)}
+          className="text-sm font-medium border border-blue-200 rounded-md px-3 py-1 bg-white text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          <option value="friends">Friends</option>
+          <option value="received">Received Requests</option>
+          <option value="sent">Sent Requests</option>
+          <option value="blocked">Blocked Users</option>
+        </select>
       </div>
 
-      {/* Search */}
+      {/* Search Bar */}
       <div className="p-4 border-b bg-white">
         <div className="flex items-center bg-gray-100 rounded-full border border-gray-200 px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
           <Search className="w-4 h-4 text-gray-400 mr-2" />
@@ -227,6 +313,9 @@ const handleAddFriend = (user) => {
               user={user}
               onClick={handleClickUser}
               onAddFriend={handleAddFriend}
+              onCancelRequest={handleCancelRequest}
+              onAcceptRequest={handleAcceptRequest}
+              onRejectRequest={handleRejectRequest}
             />
           ))
         )}
@@ -237,11 +326,16 @@ const handleAddFriend = (user) => {
 
 UsersList.propTypes = {
   users: PropTypes.array.isRequired,
-  onStartPrivateChat: PropTypes.func.isRequired,
   currentUserId: PropTypes.string.isRequired,
-  activeChatId: PropTypes.string,
-  socket: PropTypes.object,
+  currentUserUniversityId: PropTypes.string.isRequired,
+  onStartPrivateChat: PropTypes.func.isRequired,
   token: PropTypes.string.isRequired,
+  friendData: PropTypes.shape({
+    friends: PropTypes.array,
+    received: PropTypes.array,
+    sent: PropTypes.array,
+    blocked: PropTypes.array,
+  }),
 };
 
 export default UsersList;

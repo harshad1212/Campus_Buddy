@@ -8,7 +8,10 @@ import AttachmentPreview from "./AttachmentPreview";
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-const StatusIcon = ({ status, readBy }) => {
+// ✅ Show tick mark only for sender
+const StatusIcon = ({ status, readBy, isOwn }) => {
+  if (!isOwn) return null; // hide for receiver
+
   if (status === "pending")
     return <span className="text-xs text-gray-400 ml-1">Sending...</span>;
   if (status === "failed")
@@ -31,7 +34,6 @@ const Message = ({
   const [loadingFav, setLoadingFav] = useState(false);
   const isFavorited = message.favorites?.includes(currentUser._id);
 
-  // --- Updated Blue/White Theme ---
   const bubbleStyle = isOwn
     ? "bg-blue-100 text-gray-900 rounded-2xl rounded-tr-none shadow-sm"
     : "bg-white border border-blue-100 text-gray-900 rounded-2xl rounded-tl-none shadow-sm";
@@ -61,6 +63,11 @@ const Message = ({
       return "pdf";
     return "other";
   };
+
+  // ✅ Define options dynamically based on ownership
+  const messageOptions = isOwn
+    ? ["Reply", "Forward", "Edit", "Delete"]
+    : ["Reply", "Forward"];
 
   return (
     <div
@@ -171,7 +178,7 @@ const Message = ({
         {/* Time + Status */}
         <div className="mt-1 flex justify-end items-center text-[11px] text-gray-500">
           <span>{formatMessageTime(new Date(message.createdAt))}</span>
-          <StatusIcon status={message.status} readBy={message.readBy} />
+          <StatusIcon status={message.status} readBy={message.readBy} isOwn={isOwn} />
         </div>
 
         {/* Options Dropdown */}
@@ -182,7 +189,7 @@ const Message = ({
             } w-44 bg-white text-gray-800 border border-blue-100 rounded-lg shadow-lg z-50`}
             onClick={(e) => e.stopPropagation()}
           >
-            {["Reply", "Forward", "Edit", "Delete"].map((opt) => (
+            {messageOptions.map((opt) => (
               <button
                 key={opt}
                 className={`w-full px-4 py-2 text-left text-sm hover:bg-blue-50 transition ${
