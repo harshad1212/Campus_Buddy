@@ -147,9 +147,33 @@ const AdminDashboard = () => {
                     <td className="px-4 py-3 capitalize text-gray-700">
                       {req.role}
                     </td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(req.createdAt).toLocaleDateString()}
+                    <td className="px-4 py-3 text-gray-500 time-cell">
+                      {req.createdAt
+                        ? (() => {
+                            const date = new Date(req.createdAt);
+                            const today = new Date();
+                            const yesterday = new Date();
+                            yesterday.setDate(today.getDate() - 1);
+
+                            const isToday = date.toDateString() === today.toDateString();
+                            const isYesterday = date.toDateString() === yesterday.toDateString();
+
+                            const day = String(date.getDate()).padStart(2, "0");
+                            const month = String(date.getMonth() + 1).padStart(2, "0");
+                            const year = date.getFullYear();
+                            const hours = date.getHours() % 12 || 12;
+                            const minutes = String(date.getMinutes()).padStart(2, "0");
+                            const ampm = date.getHours() >= 12 ? "PM" : "AM";
+
+                            const time = `${hours}:${minutes} ${ampm}`;
+
+                            if (isToday) return `Today • ${time}`;
+                            if (isYesterday) return `Yesterday • ${time}`;
+                            return `${day}-${month}-${year} • ${time}`;
+                          })()
+                        : "—"}
                     </td>
+
                     <td className="px-4 py-3 text-center flex justify-center gap-2">
                       <button
                         onClick={() => handleAction(req._id, "approve")}

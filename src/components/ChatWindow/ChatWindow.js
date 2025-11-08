@@ -446,7 +446,7 @@ const handleToggleBlock = async () => {
       <div className="px-4 py-3 border-b flex items-center justify-between bg-white shadow-sm relative">
         <div className="flex items-center gap-3">
           <img
-            src={chatUser?.avatarUrl || "/default-avatar.png"}
+            src={chatUser?.avatarUrl || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
             alt={chatUser?.name || "User"}
             className="w-10 h-10 rounded-full object-cover border"
           />
