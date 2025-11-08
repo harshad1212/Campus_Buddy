@@ -4,11 +4,10 @@ import MessageInput from "./MessageInput";
 import Message from "./Message";
 import TypingIndicator from "../TypingIndicator";
 import ForwardModal from "./ForwardModal";
-import { MoreVertical, X } from "lucide-react";
+import { MoreVertical, X, Search, User, Ban, Trash2, Unlock } from "lucide-react"; // 🟢 added Unlock icon
 import { formatMessageTime } from "../../utils/time";
 import { uploadFiles } from "../../utils/uploadFiles";
 import ReplyPreview from "./ReplyPreview";
-
 
 const formatChatDate = (dateString) => {
   const date = new Date(dateString);
@@ -37,10 +36,18 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
   const [showForwardModal, setShowForwardModal] = useState(false);
   const [forwardMessage, setForwardMessage] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
+  const [isBlocked, setIsBlocked] = useState(false); // 🟢 NEW: track block status
 
   const messageRefs = useRef({});
   const listRef = useRef();
+  const menuRef = useRef();
 
+  // --- Scroll helpers
   const scrollToMessage = (msgId) => {
     const el = messageRefs.current[msgId];
     if (el) {
@@ -75,6 +82,17 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
     }));
   };
 
+  // --- Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   // --- Fetch messages
   useEffect(() => {
     if (!chatId || !currentUser.token) return;
@@ -97,6 +115,29 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
     fetchMessages();
   }, [chatId, currentUser.token]);
 
+// ✅ Fetch block status
+useEffect(() => {
+  const fetchBlockStatus = async () => {
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/friends/block-status/${chatUser._id}`,
+        {
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setIsBlocked(data.isBlocked || false);
+      } else {
+        console.error("Failed to fetch block status:", await res.text());
+      }
+    } catch (err) {
+      console.error("Failed to check block status:", err);
+    }
+  };
+  if (chatUser?._id) fetchBlockStatus();
+}, [chatUser, currentUser]);
+
   // --- Socket listeners
   useEffect(() => {
     if (!socket) return;
@@ -114,9 +155,18 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
           }
           return [...prev, msg];
         });
-       
       }
     };
+
+    const handleChatCleared = ({ roomId, clearedBy }) => {
+  if (roomId === chatId) {
+    setMessages([]);
+    if (clearedBy !== currentUser._id) {
+      alert("This chat was cleared by the other user.");
+    }
+  }
+};
+
 
     const handleDeleted = ({ messageId }) => {
       setMessages((prev) => prev.filter((m) => m._id !== messageId));
@@ -143,70 +193,78 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
     socket.on("message-deleted", handleDeleted);
     socket.on("message-updated", handleUpdated);
     socket.on("typing", handleTyping);
+    socket.on("chat-cleared", handleChatCleared);
+
 
     return () => {
       socket.off("new-message", handleNewMessage);
       socket.off("message-deleted", handleDeleted);
       socket.off("message-updated", handleUpdated);
       socket.off("typing", handleTyping);
+      socket.off("chat-cleared", handleChatCleared); 
     };
   }, [socket, chatId]);
 
+  // --- Auto-scroll
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    if (isAtBottom) scrollToBottom();
+  }, [messages]);
 
-  // 🟢 Auto-scroll when new message arrives (only if user is at bottom)
-useEffect(() => {
-  const el = listRef.current;
-  if (!el) return;
+  // --- Search logic
+  useEffect(() => {
+    if (!searchTerm.trim()) {
+      setSearchResults([]);
+      return;
+    }
+    const results = messages.filter((m) =>
+      m.content?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    setSearchResults(results);
+    if (results.length > 0) setCurrentSearchIndex(0);
+  }, [searchTerm, messages]);
 
-  const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
-  if (isAtBottom) {
-    scrollToBottom();
-  }
-}, [messages]);
+  useEffect(() => {
+    if (searchResults.length > 0 && searchResults[currentSearchIndex]) {
+      scrollToMessage(searchResults[currentSearchIndex]._id);
+    }
+  }, [currentSearchIndex, searchResults]);
 
+  const handleSearchNavigate = (direction) => {
+    if (searchResults.length === 0) return;
+    setCurrentSearchIndex((prev) => {
+      if (direction === "next") return (prev + 1) % searchResults.length;
+      if (direction === "prev")
+        return (prev - 1 + searchResults.length) % searchResults.length;
+      return prev;
+    });
+  };
 
   // --- Send message
   const handleSend = async ({ content, attachments }) => {
-    if (!content && (!attachments || attachments.length === 0)) return;
-
-    // Editing message
-    if (editingMessage) {
-      try {
-        const res = await fetch(`${API_BASE_URL}/api/messages/${editingMessage._id}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${currentUser.token}`,
-          },
-          body: JSON.stringify({ content }),
-        });
-        const updated = await res.json();
-        if (res.ok) {
-          setMessages((prev) =>
-            prev.map((m) => (m._id === editingMessage._id ? updated : m))
-          );
-        }
-      } catch (err) {
-        console.error("Edit failed:", err);
-      }
-      setEditingMessage(null);
-      setReplyTo(null);
+    if (isBlocked) {
+      alert("You have blocked this user. Unblock them to send messages."); // 🟢 Prevent sending
       return;
     }
 
-    // New message optimistic UI
+    if (!content && (!attachments || attachments.length === 0)) return;
+
+    // (existing send logic below)
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg = {
       _id: tempId,
       chat: chatId,
       sender: currentUser,
       content,
-      attachments: attachments?.map((f) => ({
-        file: f.file || f,
-        url: f.url || "",
-        type: f.type || "file",
-        status: "pending",
-      })) || [],
+      attachments:
+        attachments?.map((f) => ({
+          file: f.file || f,
+          url: f.url || "",
+          type: f.type || "file",
+          status: "pending",
+        })) || [],
       replyTo,
       createdAt: new Date().toISOString(),
       status: "pending",
@@ -235,7 +293,10 @@ useEffect(() => {
               ? {
                   ...m,
                   status: "failed",
-                  attachments: m.attachments.map((a) => ({ ...a, status: "failed" })),
+                  attachments: m.attachments.map((a) => ({
+                    ...a,
+                    status: "failed",
+                  })),
                 }
               : m
           )
@@ -244,7 +305,6 @@ useEffect(() => {
       }
     }
 
-    // Send via socket
     socket.sendMessage(
       {
         chatId,
@@ -262,7 +322,9 @@ useEffect(() => {
           );
         } else {
           setMessages((prev) =>
-            prev.map((m) => (m._id === tempId ? { ...m, status: "failed" } : m))
+            prev.map((m) =>
+              m._id === tempId ? { ...m, status: "failed" } : m
+            )
           );
         }
       }
@@ -271,82 +333,117 @@ useEffect(() => {
     setReplyTo(null);
   };
 
-  const handleMessageOption = async (option, message) => {
-    switch (option) {
-      case "Delete":
-        try {
-          const res = await fetch(`${API_BASE_URL}/api/messages/${message._id}`, {
-            method: "DELETE",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${currentUser.token}`,
-            },
-            body: JSON.stringify({
-              cloudinaryIds: message.attachments
-                ?.map((att) => att.cloudinaryId)
-                .filter(Boolean),
-            }),
-          });
-
-          if (res.ok) setMessages((prev) => prev.filter((m) => m._id !== message._id));
-        } catch (err) {
-          console.error("Delete failed:", err);
-        }
-        break;
-      case "Edit":
-        setEditingMessage(message);
-        break;
-      case "Forward":
-        setForwardMessage(message);
-        setShowForwardModal(true);
-        break;
-      case "Reply":
-        setReplyTo(message);
-        break;
-      default:
-        console.warn("Unknown option:", option);
+const handleClearChat = async () => {
+  if (!window.confirm("Clear all messages from this chat?")) return;
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/rooms/${chatId}/clear`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${currentUser.token}` },
+    });
+    const data = await res.json();
+    if (res.ok) {
+      setMessages([]);
+      alert(data.message || "Chat cleared successfully");
+    } else {
+      alert(data.error || "Failed to clear chat");
     }
-  };
+  } catch (err) {
+    console.error("Failed to clear chat:", err);
+    alert("Failed to clear chat. Try again.");
+  }
+};
+const handleUnfriend = async () => {
+  if (!window.confirm(`Are you sure you want to unfriend ${chatUser.name}?`))
+    return;
 
-  const handleForwardMessage = async (selectedUserIds) => {
-    if (!forwardMessage || !selectedUserIds.length) return;
-
-    try {
-      for (const userId of selectedUserIds) {
-        const res = await fetch(`${API_BASE_URL}/api/private`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${currentUser.token}`,
-          },
-          body: JSON.stringify({ targetId: userId }),
-        });
-        const room = await res.json();
-        if (!room._id) continue;
-
-        socket.sendMessage({
-          chatId: room._id,
-          content: forwardMessage.content,
-          attachments: forwardMessage.attachments || [],
-          forwarded: true,
-        });
+  try {
+    const res = await fetch(
+      `${API_BASE_URL}/api/friends/unfriend/${chatUser._id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${currentUser.token}` },
       }
-    } catch (err) {
-      console.error("Forwarding failed:", err);
-    } finally {
-      setShowForwardModal(false);
-      setForwardMessage(null);
+    );
+
+    let data = null;
+    try {
+      data = await res.json();
+    } catch {
+      console.warn("Server returned non-JSON response");
     }
-  };
+
+    if (res.ok) {
+      alert(data?.message || "User unfriended successfully");
+      setShowMenu(false);
+
+      // ✅ OPTIONAL: Close or refresh chat after unfriending
+      if (typeof window.refreshUsers === "function") {
+        window.refreshUsers(); // if your sidebar reload function exists
+      }
+
+      // ✅ OPTIONAL: If current chat belongs to that user, reset chat view
+      if (chatUser._id === chatId) {
+        window.location.reload(); // or navigate back to home/chat list
+      }
+      return;
+    }
+
+    alert(data?.error || "Failed to unfriend user");
+  } catch (err) {
+    console.error("Unfriend request failed:", err);
+    alert("Network error: could not unfriend user");
+  }
+};
+
+
+
+
 
   const handleTyping = (text) => {
-    socket.emitTyping({ chatId, isTyping: text.length > 0 });
+    if (!isBlocked) socket.emitTyping({ chatId, isTyping: text.length > 0 });
   };
+
+ // ✅ Block / Unblock user
+const handleToggleBlock = async () => {
+  try {
+    const endpoint = isBlocked
+      ? `${API_BASE_URL}/api/friends/unblock/${chatUser._id}`
+      : `${API_BASE_URL}/api/friends/block/${chatUser._id}`;
+
+    const res = await fetch(endpoint, {
+      method: isBlocked ? "DELETE" : "POST",
+      headers: { Authorization: `Bearer ${currentUser.token}` },
+    });
+
+    const text = await res.text();
+    let data = {};
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.warn("Non-JSON response from server:", text);
+      alert("Unexpected response from server");
+      return;
+    }
+
+    if (res.ok) {
+      setIsBlocked(!isBlocked);
+      alert(isBlocked ? "User unblocked successfully" : "User blocked successfully");
+    } else {
+      alert(data.error || "Failed to update block status");
+    }
+  } catch (err) {
+    console.error("Block/unblock request failed:", err);
+    alert("Network error: could not update block status");
+  }
+  setShowMenu(false);
+};
+
+  
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
       {/* Header */}
-      <div className="px-4 py-3 border-b flex items-center justify-between bg-white shadow-sm">
+      <div className="px-4 py-3 border-b flex items-center justify-between bg-white shadow-sm relative">
         <div className="flex items-center gap-3">
           <img
             src={chatUser?.avatarUrl || "/default-avatar.png"}
@@ -356,7 +453,9 @@ useEffect(() => {
           <div>
             <div className="text-sm font-semibold">{chatUser?.name || "Unknown User"}</div>
             <div className={`text-xs ${chatUser?.online ? "text-green-500" : "text-gray-400"}`}>
-              {chatUser?.online
+              {isBlocked
+                ? "You have blocked this user"
+                : chatUser?.online
                 ? "Online"
                 : chatUser?.lastSeen
                 ? `Last seen ${formatMessageTime(chatUser.lastSeen)}`
@@ -364,9 +463,68 @@ useEffect(() => {
             </div>
           </div>
         </div>
-        <button className="p-2 rounded-full hover:bg-gray-200 transition">
-          <MoreVertical className="w-5 h-5 text-gray-600" />
-        </button>
+
+        {/* Menu */}
+        <div ref={menuRef} className="relative">
+          <button
+            className="p-2 rounded-full hover:bg-gray-200 transition"
+            onClick={() => setShowMenu((prev) => !prev)}
+          >
+            <MoreVertical className="w-5 h-5 text-gray-600" />
+          </button>
+
+          {showMenu && (
+  <div className="absolute right-0 mt-2 w-48 bg-white border border-blue-100 rounded-xl shadow-lg z-50 overflow-hidden animate-fade-in">
+    <button
+      onClick={() => {
+        alert("Show user profile (to be implemented)");
+        setShowMenu(false);
+      }}
+      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-gray-700 hover:bg-blue-50 transition"
+    >
+      <User size={16} /> View Profile
+    </button>
+
+    <button
+      onClick={handleToggleBlock}
+      className={`flex items-center gap-2 px-4 py-2 w-full text-left text-sm transition ${
+        isBlocked
+          ? "text-blue-600 hover:bg-blue-50"
+          : "text-red-600 hover:bg-red-50"
+      }`}
+    >
+      {isBlocked ? <Unlock size={16} /> : <Ban size={16} />}
+      {isBlocked ? "Unblock User" : "Block User"}
+    </button>
+
+    {/* 🆕 UNFRIEND OPTION */}
+    <button
+      onClick={handleUnfriend}
+      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-yellow-600 hover:bg-yellow-50 transition"
+    >
+      <Trash2 size={16} /> Unfriend User
+    </button>
+
+    <button
+      onClick={() => {
+        setShowSearch(true);
+        setShowMenu(false);
+      }}
+      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm hover:bg-blue-50 transition"
+    >
+      <Search size={16} /> Search
+    </button>
+
+    <button
+      onClick={handleClearChat}
+      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-red-600 hover:bg-red-50 transition"
+    >
+      <Trash2 size={16} /> Clear Chat
+    </button>
+  </div>
+)}
+
+        </div>
       </div>
 
       {/* Messages */}
@@ -389,11 +547,12 @@ useEffect(() => {
                   <Message
                     key={msg._id}
                     message={msg}
-                    isOwn={msg.sender?._id === currentUser._id || msg.sender === currentUser._id}
+                    isOwn={
+                      msg.sender?._id === currentUser._id ||
+                      msg.sender === currentUser._id
+                    }
                     currentUser={currentUser}
-                    onOption={handleMessageOption}
                     scrollRef={(el) => (messageRefs.current[msg._id] = el)}
-                    onScrollToMessage={scrollToMessage}
                   />
                 ))}
               </div>
@@ -403,30 +562,32 @@ useEffect(() => {
       </div>
 
       {/* Typing Indicator */}
-      {typingUsers.length > 0 && (
+      {!isBlocked && typingUsers.length > 0 && (
         <div className="px-4 py-1 text-xs text-gray-500 bg-gray-50 border-t">
           <TypingIndicator typingUsers={typingUsers} />
         </div>
       )}
 
-    
-
-
-
-      {/* Input */}
+      {/* Input (disabled if blocked) */}
       <div className="sticky bottom-0 bg-white border-t shadow-sm z-10">
-        <MessageInput
-          onSend={handleSend}
-          onTyping={handleTyping}
-          editingMessage={editingMessage}
-          replyTo={replyTo}
-          onCancelEdit={() => {
-            setEditingMessage(null);
-            setReplyTo(null);
-          }}
-          onCancelReply={() => setReplyTo(null)}
-          currentUser={currentUser} 
-        />
+        {isBlocked ? (
+          <div className="text-center text-sm text-gray-400 py-3">
+            You have blocked this user. Unblock to chat again.
+          </div>
+        ) : (
+          <MessageInput
+            onSend={handleSend}
+            onTyping={handleTyping}
+            editingMessage={editingMessage}
+            replyTo={replyTo}
+            onCancelEdit={() => {
+              setEditingMessage(null);
+              setReplyTo(null);
+            }}
+            onCancelReply={() => setReplyTo(null)}
+            currentUser={currentUser}
+          />
+        )}
       </div>
 
       {/* Forward Modal */}
@@ -435,7 +596,7 @@ useEffect(() => {
           users={allUsers}
           excludeUserIds={[currentUser._id]}
           onClose={() => setShowForwardModal(false)}
-          onForward={handleForwardMessage}
+          onForward={() => {}}
         />
       )}
     </div>

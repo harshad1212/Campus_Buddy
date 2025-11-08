@@ -5,6 +5,8 @@ import ChatWindow from "../ChatWindow/ChatWindow";
 import OnlineStatus from "../Status/OnlineStatus";
 import useSocket from "../../hooks/UseSocket";
 import { formatMessageTime } from "../../utils/time";
+import { MessageCircle, Loader2, ArrowLeft } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const ChatPage = ({ currentUser }) => {
   const socketHook = useSocket(currentUser);
@@ -15,28 +17,37 @@ const ChatPage = ({ currentUser }) => {
   const [activeRoomId, setActiveRoomId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [friendData, setFriendData] = useState({
-  friends: [],
-  received: [],
-  sent: [],
-});
+    friends: [],
+    received: [],
+    sent: [],
+    blocked: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
 
+  const apiBase =
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-  // Ask for notification permission
+  // 🧭 Detect mobile vs desktop
+  useEffect(() => {
+    const handleResize = () => setIsMobileView(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // 🧭 Ask for notification permission
   useEffect(() => {
     if (Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  // Fetch initial users and rooms
-   // 🔁 Fetch initial users and rooms
+  // 🔁 Fetch initial data
   async function fetchInitialData() {
     if (!currentUser?.token) return;
+    setLoading(true);
 
     try {
-      const apiBase =
-        process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
-
       const [roomsRes, usersRes] = await Promise.all([
         fetch(`${apiBase}/api/rooms`, {
           headers: { Authorization: `Bearer ${currentUser.token}` },
@@ -56,9 +67,12 @@ const ChatPage = ({ currentUser }) => {
         friends: data.currentUserFriends,
         received: data.currentUserFriendRequests,
         sent: data.currentUserSentRequests,
+        blocked: data.currentUserBlockedUsers,
       });
     } catch (err) {
       console.error("Failed to fetch initial data:", err);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -66,21 +80,17 @@ const ChatPage = ({ currentUser }) => {
     fetchInitialData();
   }, [currentUser]);
 
-    // 👇 Re-fetch on tab focus
+  // 🕓 Refresh when tab refocuses
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        fetchInitialData();
-      }
+      if (document.visibilityState === "visible") fetchInitialData();
     };
-
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
       document.removeEventListener("visibilitychange", handleVisibilityChange);
   }, []);
 
-
-  // Socket listeners
+  // 💬 Handle sockets
   useEffect(() => {
     if (!socket) return;
 
@@ -99,15 +109,12 @@ const ChatPage = ({ currentUser }) => {
     };
 
     const onUserList = (list) => {
-      console.log("Received user list:", list);
-      // Keep only users from the same university
       const sameUniversityUsers = list.filter(
         (u) => u.universityId === currentUser.universityId
       );
       const uniqueUsers = Array.from(
         new Map(sameUniversityUsers.map((u) => [u._id, u])).values()
       );
-
       setUsers((prev) =>
         uniqueUsers.map((u) => {
           const existing = prev.find((p) => p._id === u._id);
@@ -123,71 +130,16 @@ const ChatPage = ({ currentUser }) => {
         )
       );
 
-    const onNewMessage = (msg) => {
-      const senderId = msg.sender._id;
-      const isActive = selectedUser?._id === senderId;
-
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === senderId
-            ? { ...u, unreadCount: isActive ? 0 : (u.unreadCount || 0) + 1 }
-            : u
-        )
-      );
-
-      if (Notification.permission === "granted" && !isActive) {
-        showNotification(msg);
-      }
-    };
-
-    const onFriendRequest = ({ from }) => {
-      if (Notification.permission === "granted") {
-        const n = new Notification("New Friend Request", {
-          body: `${from.name} sent you a friend request!`,
-          icon: from.avatarUrl || "/default-avatar.png",
-        });
-        n.onclick = () => {
-          window.focus();
-          n.close();
-        };
-      } else if (Notification.permission === "default") {
-        Notification.requestPermission();
-      }
-      alert(`${from.name} sent you a friend request`);
-    };
-
     socket.on("room-upsert", onRoomsUpdate);
     socket.on("user-list", onUserList);
     socket.on("presence", onPresence);
-    socket.on("new-message", onNewMessage);
-    socket.on("friend-request", onFriendRequest);
 
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
       socket.off("user-list", onUserList);
       socket.off("presence", onPresence);
-      socket.off("new-message", onNewMessage);
-      socket.off("friend-request", onFriendRequest);
     };
-  }, [socket, selectedUser, currentUser.universityId]);
-
-  const showNotification = (message) => {
-    const senderName = message.sender?.name || "New Message";
-    const body = message.text || "You received a new message";
-
-    const notification = new Notification(senderName, {
-      body,
-      icon: message.sender?.avatarUrl || "/default-avatar.png",
-      tag: message.sender?._id,
-    });
-
-    notification.onclick = () => {
-      window.focus();
-      const sender = users.find((u) => u._id === message.sender._id);
-      if (sender) handleStartPrivateChat(sender);
-      notification.close();
-    };
-  };
+  }, [socket, currentUser.universityId]);
 
   const handleStartPrivateChat = async (user) => {
     setUsers((prev) =>
@@ -209,8 +161,6 @@ const ChatPage = ({ currentUser }) => {
     }
 
     try {
-      const apiBase =
-        process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
       const res = await fetch(`${apiBase}/api/private`, {
         method: "POST",
         headers: {
@@ -228,63 +178,114 @@ const ChatPage = ({ currentUser }) => {
     }
   };
 
+  const handleBackToList = () => {
+    setActiveRoomId(null);
+    setSelectedUser(null);
+  };
+
   return (
-    <div className="h-screen flex bg-gray-50 text-gray-900">
-      {/* Sidebar */}
-      <aside className="w-80 bg-white border-r border-gray-200 flex flex-col shadow-lg rounded-tr-2xl rounded-br-2xl">
-        {/* Current user profile */}
-        <div className="px-5 py-2 flex items-center gap-3 border-b border-gray-100 bg-blue-50 rounded-t-2xl">
-          <img
-            src={currentUser.avatarUrl || "/default-avatar.png"}
-            alt={currentUser.name}
-            className="w-12 h-12 rounded-full object-cover border border-gray-200"
-          />
-          <div>
-            <div className="text-sm font-semibold text-gray-900">
-              {currentUser.name}
-            </div>
-            <div className="text-xs text-gray-500">
-              <OnlineStatus user={{ ...currentUser, online: true }} small />
-            </div>
-          </div>
-        </div>
+    <div className="h-screen flex bg-gradient-to-br from-blue-50 to-white text-gray-900 overflow-hidden">
+      <div className="w-full flex flex-col md:flex-row transition-all duration-300 ease-in-out">
+        {/* Sidebar */}
+        <AnimatePresence initial={false}>
+          {(!isMobileView || !activeRoomId) && (
+            <motion.aside
+              key="sidebar"
+              initial={{ x: isMobileView ? 0 : 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -400, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="md:w-80 w-full flex flex-col bg-white border-r border-blue-100 shadow-md md:static absolute inset-0 md:translate-x-0"
+            >
+              {/* Current user header */}
+              <div className="px-5 py-4 flex items-center gap-3 border-b bg-blue-100/60 backdrop-blur-md">
+                <img
+                  src={currentUser.avatarUrl || "/default-avatar.png"}
+                  alt={currentUser.name}
+                  className="w-12 h-12 rounded-full border border-blue-200 object-cover"
+                />
+                <div>
+                  <h2 className="text-sm font-semibold text-gray-900">
+                    {currentUser.name}
+                  </h2>
+                  <OnlineStatus user={{ ...currentUser, online: true }} small />
+                </div>
+              </div>
 
-        {/* Users List */}
-        <div className="flex-1 overflow-y-auto p-2">
-          <UsersList
-            users={users}
-            currentUserId={currentUser._id}
-            currentUserUniversityId={currentUser.universityId}
-            onStartPrivateChat={handleStartPrivateChat}
-            socket={socket}
-            token={currentUser.token}
-            activeChatId={activeRoomId}
-            friendData={friendData}
-          />
-        </div>
+              {/* Users list */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 hover:scrollbar-thumb-blue-300 transition">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center h-full text-blue-500">
+                    <Loader2 className="w-5 h-5 animate-spin mb-2" />
+                    <span className="text-sm">Loading chats...</span>
+                  </div>
+                ) : (
+                  <UsersList
+                    users={users}
+                    currentUserId={currentUser._id}
+                    currentUserUniversityId={currentUser.universityId}
+                    onStartPrivateChat={handleStartPrivateChat}
+                    socket={socket}
+                    token={currentUser.token}
+                    activeChatId={activeRoomId}
+                    friendData={friendData}
+                    refreshUsers={fetchInitialData}
+                  />
+                )}
+              </div>
 
-        {/* Last sync */}
-        <div className="p-3 text-xs text-gray-400 text-center border-t border-gray-100">
-          Last sync: {formatMessageTime(new Date())}
-        </div>
-      </aside>
+              <div className="text-xs text-center py-3 text-gray-400 border-t border-gray-100">
+                Last sync: {formatMessageTime(new Date())}
+              </div>
+            </motion.aside>
+          )}
+        </AnimatePresence>
 
-      {/* Chat Window */}
-      <main className="flex-1 flex flex-col bg-gray-50">
-        {activeRoomId && selectedUser ? (
-          <ChatWindow
-            chatId={activeRoomId}
-            socket={socketHook}
-            currentUser={currentUser}
-            chatUser={selectedUser}
-            allUsers={users}
-          />
-        ) : (
-          <div className="flex-1 flex items-center justify-center text-gray-400 text-lg font-medium">
-            Select a user to start chatting
-          </div>
-        )}
-      </main>
+        {/* Chat Window */}
+        <AnimatePresence initial={false}>
+          {(!isMobileView || activeRoomId) && (
+            <motion.main
+              key="chat"
+              initial={{ x: isMobileView ? 400 : 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: 400, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="flex-1 flex flex-col bg-blue-50/30 relative"
+            >
+              {activeRoomId && selectedUser ? (
+                <>
+                  {isMobileView && (
+                    <button
+                      onClick={handleBackToList}
+                      className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-md hover:bg-blue-100 transition"
+                    >
+                      <ArrowLeft className="w-5 h-5 text-blue-600" />
+                    </button>
+                  )}
+                  <ChatWindow
+                    chatId={activeRoomId}
+                    socket={socketHook}
+                    currentUser={currentUser}
+                    chatUser={selectedUser}
+                    allUsers={users}
+                    
+                  />
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full text-blue-400">
+                  <MessageCircle className="w-12 h-12 mb-3 opacity-70" />
+                  <p className="text-lg font-medium">
+                    Select a chat to start messaging
+                  </p>
+                  <p className="text-sm text-gray-400 mt-1">
+                    Your conversations will appear here
+                  </p>
+                </div>
+              )}
+            </motion.main>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
@@ -297,6 +298,7 @@ ChatPage.propTypes = {
     token: PropTypes.string.isRequired,
     universityId: PropTypes.string.isRequired,
   }).isRequired,
+
 };
 
 export default ChatPage;
