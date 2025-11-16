@@ -243,13 +243,40 @@ useEffect(() => {
   };
 
   // --- Send message
-  const handleSend = async ({ content, attachments }) => {
+  const handleSend = async (payload = {}) => {
+    const { content = "", attachments = [], editId } = payload;
     if (isBlocked) {
       alert("You have blocked this user. Unblock them to send messages."); // 🟢 Prevent sending
       return;
     }
 
     if (!content && (!attachments || attachments.length === 0)) return;
+
+    // If this is an edit of an existing message, call the REST API to update
+    if (editId) {
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/messages/${editId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentUser.token}`,
+          },
+          body: JSON.stringify({ content }),
+        });
+        if (!res.ok) {
+          const txt = await res.text();
+          throw new Error(txt || "Failed to update message");
+        }
+        const updated = await res.json();
+        setMessages((prev) => prev.map((m) => (m._id === updated._id ? { ...m, ...updated } : m)));
+        setEditingMessage(null);
+        setReplyTo(null);
+      } catch (err) {
+        console.error("Failed to update message:", err);
+        alert("Failed to edit message. Try again.");
+      }
+      return;
+    }
 
     // (existing send logic below)
     const tempId = `temp-${Date.now()}`;
@@ -438,6 +465,101 @@ const handleToggleBlock = async () => {
   setShowMenu(false);
 };
 
+const handleMessageOption = (option, message) => {
+  console.log("Option selected:", option, "for message:", message);
+
+  switch (option) {
+    case "Reply":
+      setReplyTo(message);
+      break;
+
+    case "Forward":
+      setForwardMessage(message);
+      setShowForwardModal(true);
+      break;
+
+    case "Edit":
+      setEditingMessage(message);
+      break;
+
+    case "Delete":
+      if (window.confirm("Delete this message?")) {
+        // Call server to delete message; server will emit 'message-deleted' to update clients
+        (async () => {
+          try {
+            const res = await fetch(`${API_BASE_URL}/api/messages/${message._id}`, {
+              method: "DELETE",
+              headers: { Authorization: `Bearer ${currentUser.token}`, "Content-Type": "application/json" },
+              body: JSON.stringify({}),
+            });
+            if (!res.ok) {
+              const txt = await res.text();
+              throw new Error(txt || "Delete failed");
+            }
+          } catch (err) {
+            console.error("Delete failed:", err);
+            alert("Failed to delete message");
+          }
+        })();
+
+      }
+      break;
+
+    default:
+      console.warn("Unknown option:", option);
+  }
+};
+
+  // --- Forward handler: create/get private room then send forwarded message
+  const handleForwardToUsers = async (userIds) => {
+    if (!forwardMessage) return;
+    try {
+      for (const targetId of userIds) {
+        // create or get private room
+        const res = await fetch(`${API_BASE_URL}/api/private`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentUser.token}`,
+          },
+          body: JSON.stringify({ targetId }),
+        });
+        if (!res.ok) {
+          console.warn("Failed to get/create private room for", targetId);
+          continue;
+        }
+        const room = await res.json();
+        const clientTempId = `temp-forward-${Date.now()}-${targetId}`;
+
+        const payload = {
+          chatId: room._id || room._id?._id || room._id,
+          content: forwardMessage.content || "",
+          attachments: forwardMessage.attachments || [],
+          forwarded: true,
+          clientTempId,
+        };
+
+        // use sendMessage helper on socket object
+        try {
+          socket.sendMessage(payload, (ack) => {
+            // optional per-room ack handling (ignored for now)
+            if (ack?.status !== "ok") {
+              console.warn("Forward ack error for", targetId, ack);
+            }
+          });
+        } catch (e) {
+          console.error("Socket sendMessage failed for forward:", e);
+        }
+      }
+      setShowForwardModal(false);
+      setForwardMessage(null);
+      alert("Message forwarded");
+    } catch (err) {
+      console.error("Forwarding failed:", err);
+      alert("Failed to forward message. Try again.");
+    }
+  };
+
   
 
   return (
@@ -553,6 +675,8 @@ const handleToggleBlock = async () => {
                     }
                     currentUser={currentUser}
                     scrollRef={(el) => (messageRefs.current[msg._id] = el)}
+                      onOption={handleMessageOption}              // ✅ Added this line
+                      onScrollToMessage={scrollToMessage}    
                   />
                 ))}
               </div>
@@ -596,7 +720,7 @@ const handleToggleBlock = async () => {
           users={allUsers}
           excludeUserIds={[currentUser._id]}
           onClose={() => setShowForwardModal(false)}
-          onForward={() => {}}
+          onForward={handleForwardToUsers}
         />
       )}
     </div>

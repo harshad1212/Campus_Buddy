@@ -85,7 +85,8 @@ const MessageInput = ({
   const handleSubmit = () => {
     if (!text.trim() && files.length === 0) return;
 
-    onSend({
+    // include editId when editing an existing message so parent can handle update
+    const payload = {
       content: text.trim(),
       attachments: files,
       replyTo: replyTo
@@ -96,7 +97,11 @@ const MessageInput = ({
             attachments: replyTo.attachments || [],
           }
         : null,
-    });
+    };
+
+    if (editingMessage && editingMessage._id) payload.editId = editingMessage._id;
+
+    onSend(payload);
 
     setText("");
     setFiles([]);
