@@ -1,9 +1,23 @@
-import React, { useState, useEffect } from "react";
-import PropTypes from "prop-types";
-import { Search, UserPlus, XCircle, Check, Clock, Users } from "lucide-react";
-import { motion } from "framer-motion";
+/* ==========================================================
+   USERS LIST — FULL PROFESSIONAL TELEGRAM-STYLE REDESIGN
+   ========================================================== */
 
-// ✅ User Row Component
+import React, { useState, useEffect, useRef } from "react";
+import PropTypes from "prop-types";
+import {
+  Search,
+  UserPlus,
+  XCircle,
+  Check,
+  Clock,
+  Users,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+/* ==========================================================
+   USER ROW COMPONENT (MODERN CARD)
+   ========================================================== */
+
 const UserRow = ({
   user,
   onClick,
@@ -14,101 +28,106 @@ const UserRow = ({
   onUnblockUser,
 }) => (
   <motion.div
-    whileHover={{ scale: 1.02 }}
-    transition={{ type: "spring", stiffness: 300 }}
-    className={`group flex items-center gap-3 px-4 py-3 cursor-pointer rounded-xl border border-transparent hover:border-blue-100 hover:bg-blue-50 transition ${
-      user.isBlocked ? "opacity-70" : ""
-    }`}
+    whileHover={{ scale: 1.01 }}
+    transition={{ type: "spring", stiffness: 220 }}
+    className={`group flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer
+      bg-white shadow-sm border border-gray-200
+      hover:shadow-md hover:bg-blue-50/60 transition-all duration-200
+      ${user.isBlocked ? "opacity-50" : ""}
+    `}
     onClick={() => onClick(user)}
   >
+    {/* Avatar */}
     <div className="relative">
       <img
         src={user.avatarUrl || "/default-avatar.png"}
-        alt={`${user.name} avatar`}
-        className="w-12 h-12 rounded-full object-cover border border-blue-100 shadow-sm"
+        className="w-12 h-12 rounded-full object-cover border border-blue-100 shadow"
+        alt={user.name}
       />
       <span
         className={`absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-white ${
           user.online ? "bg-green-500" : "bg-gray-400"
         }`}
-      ></span>
+      />
     </div>
 
+    {/* Name & Status */}
     <div className="flex-1 min-w-0">
-      <div className="flex justify-between items-center">
-        <span className="text-sm font-semibold truncate text-gray-900 group-hover:text-blue-700 transition">
-          {user.name}
-        </span>
-      </div>
-      <div className="text-xs text-gray-500 truncate mt-0.5">
+      <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-blue-700">
+        {user.name}
+      </p>
+      <p className="text-xs text-gray-500 truncate">
         {user.online ? (
-          <span className="text-green-500 font-medium">Online</span>
+          <span className="text-green-600 font-medium">Online</span>
         ) : (
-          `Last seen ${user.lastSeen || "recently"}`
+          "Last seen " + (user.lastSeen || "recently")
         )}
-      </div>
+      </p>
     </div>
 
+    {/* ACTIONS */}
     <div className="flex items-center gap-2">
+
+      {/* Add Friend */}
       {!user.isFriend && !user.status && !user.isBlocked && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onAddFriend(user);
           }}
-          className="p-2 rounded-full hover:bg-blue-100 text-blue-600 transition"
-          title="Send Friend Request"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 shadow-sm"
         >
           <UserPlus size={18} />
         </button>
       )}
 
+      {/* Pending */}
       {user.status === "sent" && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onCancelRequest(user);
           }}
-          className="text-xs px-2 py-1 rounded-md bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition"
+          className="px-2.5 py-1 text-xs rounded-full border border-blue-300 bg-blue-50 text-blue-600"
         >
           <Clock size={14} className="inline-block mr-1" />
           Pending
         </button>
       )}
 
+      {/* Request Received */}
       {user.status === "received" && (
-        <div className="flex gap-2">
+        <div className="flex gap-1">
           <button
             onClick={(e) => {
               e.stopPropagation();
               onAcceptRequest(user);
             }}
-            className="px-2 py-1 text-xs bg-green-50 border border-green-200 text-green-600 rounded-md hover:bg-green-100 transition"
+            className="px-2 py-1 text-xs rounded-full bg-green-100 border border-green-300 text-green-700"
           >
-            <Check size={14} className="inline-block mr-1" />
-            Accept
+            <Check size={14} />
           </button>
+
           <button
             onClick={(e) => {
               e.stopPropagation();
               onRejectRequest(user);
             }}
-            className="px-2 py-1 text-xs bg-red-50 border border-red-200 text-red-600 rounded-md hover:bg-red-100 transition"
+            className="px-2 py-1 text-xs rounded-full bg-red-100 border border-red-300 text-red-600"
           >
-            <XCircle size={14} className="inline-block mr-1" />
-            Reject
+            <XCircle size={14} />
           </button>
         </div>
       )}
 
+      {/* Unblock */}
       {user.isBlocked && (
         <button
           onClick={(e) => {
             e.stopPropagation();
             onUnblockUser(user);
           }}
-          className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-full transition"
-          title="Unblock User"
+          className="w-9 h-9 flex items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200 shadow-sm"
         >
           <XCircle size={18} />
         </button>
@@ -117,7 +136,10 @@ const UserRow = ({
   </motion.div>
 );
 
-// ✅ Main Users List Component
+/* ==========================================================
+   MAIN USERS LIST COMPONENT
+   ========================================================== */
+
 const UsersList = ({
   users,
   currentUserId,
@@ -130,195 +152,98 @@ const UsersList = ({
   const [searchTerm, setSearchTerm] = useState("");
   const [localUsers, setLocalUsers] = useState([]);
   const [viewMode, setViewMode] = useState("friends");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const menuRef = useRef();
 
   const apiBase =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
+  /* ==========================================================
+     Close 3-dots menu when clicking outside
+     ========================================================== */
   useEffect(() => {
-    let filtered = [];
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
 
-    switch (viewMode) {
-      case "all":
-        filtered = users
-          .filter(
-            (u) =>
-              u._id !== currentUserId &&
-              u.universityId === currentUserUniversityId // ✅ limit by university
-          )
-          .map((u) => ({
-            ...u,
-            isFriend: friendData?.friends?.includes(u._id),
-            isBlocked: friendData?.blocked?.includes(u._id),
-            status: friendData?.sent?.includes(u._id)
-              ? "sent"
-              : friendData?.received?.includes(u._id)
-              ? "received"
-              : null,
-          }));
-        break;
+  /* ==========================================================
+     Filtering logic
+     ========================================================== */
+  useEffect(() => {
+    const matchesUni = (u) => u.universityId === currentUserUniversityId;
 
-      case "friends":
-        filtered = users
-          .filter(
-            (u) =>
-              friendData?.friends?.includes(u._id) &&
-              u.universityId === currentUserUniversityId &&
-              u._id !== currentUserId
-          )
-          .map((u) => ({
-            ...u,
-            isFriend: true,
-            isBlocked: friendData?.blocked?.includes(u._id),
-          }));
-        break;
+    const transform = (u) => ({
+      ...u,
+      isFriend: friendData?.friends?.includes(u._id),
+      isBlocked: friendData?.blocked?.includes(u._id),
+      status: friendData?.sent?.includes(u._id)
+        ? "sent"
+        : friendData?.received?.includes(u._id)
+        ? "received"
+        : null,
+    });
 
-      case "received":
-        filtered = users
-          .filter(
-            (u) =>
-              friendData?.received?.includes(u._id) &&
-              u.universityId === currentUserUniversityId
-          )
-          .map((u) => ({ ...u, status: "received" }));
-        break;
+    let list = [];
 
-      case "sent":
-        filtered = users
-          .filter(
-            (u) =>
-              friendData?.sent?.includes(u._id) &&
-              u.universityId === currentUserUniversityId
-          )
-          .map((u) => ({ ...u, status: "sent" }));
-        break;
-
-      case "blocked":
-        filtered = users
-          .filter(
-            (u) =>
-              friendData?.blocked?.includes(u._id) &&
-              u.universityId === currentUserUniversityId
-          )
-          .map((u) => ({ ...u, isBlocked: true }));
-        break;
-
-      default:
-        filtered = [];
-    }
-
-    // ✅ Search only same university users
-    if (searchTerm.trim()) {
-      filtered = users
+    if (searchTerm) {
+      list = users
         .filter(
           (u) =>
-            u.universityId === currentUserUniversityId && // ✅ same university restriction
+            matchesUni(u) &&
             u.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
-        .map((u) => ({
-          ...u,
-          isFriend: friendData?.friends?.includes(u._id),
-          isBlocked: friendData?.blocked?.includes(u._id),
-          status: friendData?.sent?.includes(u._id)
-            ? "sent"
-            : friendData?.received?.includes(u._id)
-            ? "received"
-            : null,
-        }));
+        .map(transform);
+    } else {
+      const filters = {
+        all: (u) => u._id !== currentUserId && matchesUni(u),
+        friends: (u) => friendData?.friends?.includes(u._id),
+        received: (u) => friendData?.received?.includes(u._id),
+        sent: (u) => friendData?.sent?.includes(u._id),
+        blocked: (u) => friendData?.blocked?.includes(u._id),
+      };
+      list = users.filter(filters[viewMode]).map(transform);
     }
 
-    setLocalUsers(filtered);
+    setLocalUsers(list);
   }, [
     users,
     viewMode,
     searchTerm,
+    friendData,
     currentUserId,
     currentUserUniversityId,
-    friendData,
   ]);
 
-  const handleAfterAction = async (data) => {
-    if (data?.message) alert(data.message);
-    if (typeof refreshUsers === "function") await refreshUsers();
-  };
-
-  const handleAddFriend = async (user) => {
+  /* ==========================================================
+     Universal API helper
+     ========================================================== */
+  const perform = async (url, method = "POST") => {
     try {
-      const res = await fetch(`${apiBase}/api/friends/send-request/${user._id}`, {
-        method: "POST",
+      const res = await fetch(`${apiBase}${url}`, {
+        method,
         headers: { Authorization: `Bearer ${token}` },
       });
+
       const data = await res.json();
-      if (res.ok) await handleAfterAction(data);
-      else alert(data.error);
+      if (!res.ok) return alert(data.error);
+
+      refreshUsers();
     } catch (err) {
       console.error(err);
     }
-  };
-
-  const handleCancelRequest = async (user) => {
-    try {
-      const res = await fetch(`${apiBase}/api/friends/cancel-request/${user._id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) await handleAfterAction(data);
-      else alert(data.error);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleAcceptRequest = async (user) => {
-    try {
-      const res = await fetch(`${apiBase}/api/friends/accept-request/${user._id}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) await handleAfterAction(data);
-      else alert(data.error);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleRejectRequest = async (user) => {
-    try {
-      const res = await fetch(`${apiBase}/api/friends/reject-request/${user._id}`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) await handleAfterAction(data);
-      else alert(data.error);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleUnblockUser = async (user) => {
-    try {
-      const res = await fetch(`${apiBase}/api/friends/unblock/${user._id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) await handleAfterAction(data);
-      else alert(data.error);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleClickUser = (user) => {
-    if (user.isFriend && !user.isBlocked) onStartPrivateChat(user);
   };
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-2xl border border-gray-200 shadow-md">
-      {/* Header */}
-      <div className="px-5 py-4 border-b bg-blue-50 rounded-t-2xl flex justify-between items-center">
+    <div className="flex flex-col h-full bg-white border border-gray-300 rounded-2xl shadow-lg overflow-hidden">
+
+      {/* ================= HEADER ================= */}
+      <div className="px-5 py-4 bg-blue-100/70 backdrop-blur-md border-b border-blue-200 flex justify-between items-center relative">
         <h2 className="text-sm font-semibold text-blue-700 flex items-center gap-2">
           <Users size={16} className="text-blue-600" />
           {viewMode === "all"
@@ -326,51 +251,104 @@ const UsersList = ({
             : viewMode.charAt(0).toUpperCase() + viewMode.slice(1)}
         </h2>
 
-        <select
-          value={viewMode}
-          onChange={(e) => setViewMode(e.target.value)}
-          className="text-sm font-medium border border-blue-200 rounded-md px-3 py-1 bg-white text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
-        >
-          <option value="all">All Users</option>
-          <option value="friends">Friends</option>
-          <option value="received">Received</option>
-          <option value="sent">Sent</option>
-          <option value="blocked">Blocked</option>
-        </select>
+        {/* Three dots */}
+        <div ref={menuRef}>
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="p-2 rounded-full hover:bg-blue-200/70 transition"
+          >
+            <svg
+              className="w-5 h-5 text-blue-700"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle cx="5" cy="12" r="1.5" />
+              <circle cx="12" cy="12" r="1.5" />
+              <circle cx="19" cy="12" r="1.5" />
+            </svg>
+          </button>
+
+          {/* MODE MENU */}
+          <AnimatePresence>
+            {menuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 shadow-xl rounded-xl z-50"
+              >
+                {[
+                  ["all", "All Users"],
+                  ["friends", "Friends"],
+                  ["received", "Requests Received"],
+                  ["sent", "Requests Sent"],
+                  ["blocked", "Blocked Users"],
+                ].map(([key, label]) => (
+                  <button
+                    key={key}
+                    className={`w-full text-left px-4 py-2 text-sm rounded-md transition 
+                      ${
+                        viewMode === key
+                          ? "bg-blue-50 text-blue-700 font-semibold"
+                          : "text-gray-700 hover:bg-gray-100"
+                      }`}
+                    onClick={() => {
+                      setViewMode(key);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Search */}
+      {/* ================= SEARCH ================= */}
       <div className="p-3 border-b bg-white">
-        <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-400">
+        <div className="flex items-center bg-gray-100 rounded-full px-3 py-2 border border-gray-200 shadow-sm focus-within:ring-2 focus-within:ring-blue-300">
           <Search className="w-4 h-4 text-gray-400 mr-2" />
           <input
             type="text"
-            placeholder="Search users from your university..."
+            placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-transparent outline-none text-sm text-gray-900 placeholder-gray-400"
+            className="w-full bg-transparent outline-none text-sm"
           />
         </div>
       </div>
 
-      {/* User List */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 hover:scrollbar-thumb-blue-300">
+      {/* ================= USER LIST ================= */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 scrollbar-thin scrollbar-thumb-blue-300">
         {localUsers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-400 text-sm py-10">
+          <div className="flex flex-col items-center justify-center mt-10 text-gray-500">
             <Search className="w-6 h-6 mb-2 opacity-60" />
-            No users found in your university
+            No users found
           </div>
         ) : (
           localUsers.map((user) => (
             <UserRow
               key={user._id}
               user={user}
-              onClick={handleClickUser}
-              onAddFriend={handleAddFriend}
-              onCancelRequest={handleCancelRequest}
-              onAcceptRequest={handleAcceptRequest}
-              onRejectRequest={handleRejectRequest}
-              onUnblockUser={handleUnblockUser}
+              onClick={() =>
+                user.isFriend && !user.isBlocked && onStartPrivateChat(user)
+              }
+              onAddFriend={(u) =>
+                perform(`/api/friends/send-request/${u._id}`)
+              }
+              onCancelRequest={(u) =>
+                perform(`/api/friends/cancel-request/${u._id}`, "DELETE")
+              }
+              onAcceptRequest={(u) =>
+                perform(`/api/friends/accept-request/${u._id}`)
+              }
+              onRejectRequest={(u) =>
+                perform(`/api/friends/reject-request/${u._id}`)
+              }
+              onUnblockUser={(u) =>
+                perform(`/api/friends/unblock/${u._id}`, "DELETE")
+              }
             />
           ))
         )}
@@ -385,12 +363,7 @@ UsersList.propTypes = {
   currentUserUniversityId: PropTypes.string.isRequired,
   onStartPrivateChat: PropTypes.func.isRequired,
   token: PropTypes.string.isRequired,
-  friendData: PropTypes.shape({
-    friends: PropTypes.array,
-    received: PropTypes.array,
-    sent: PropTypes.array,
-    blocked: PropTypes.array,
-  }),
+  friendData: PropTypes.object,
   refreshUsers: PropTypes.func.isRequired,
 };
 

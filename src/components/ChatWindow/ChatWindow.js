@@ -4,7 +4,7 @@ import MessageInput from "./MessageInput";
 import Message from "./Message";
 import TypingIndicator from "../TypingIndicator";
 import ForwardModal from "./ForwardModal";
-import { MoreVertical, X, Search, User, Ban, Trash2, Unlock } from "lucide-react"; // 🟢 added Unlock icon
+import { MoreVertical, X, Search, User, Ban, Trash2, Unlock } from "lucide-react";
 import { formatMessageTime } from "../../utils/time";
 import { uploadFiles } from "../../utils/uploadFiles";
 import ReplyPreview from "./ReplyPreview";
@@ -28,7 +28,7 @@ const formatChatDate = (dateString) => {
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) => {
+const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], friendIds = [] }) => {
   const [messages, setMessages] = useState([]);
   const [typingUsers, setTypingUsers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -41,7 +41,7 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(0);
-  const [isBlocked, setIsBlocked] = useState(false); // 🟢 NEW: track block status
+  const [isBlocked, setIsBlocked] = useState(false);
 
   const messageRefs = useRef({});
   const listRef = useRef();
@@ -82,7 +82,7 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
     }));
   };
 
-  // --- Close menu when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) {
@@ -115,30 +115,30 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [] }) =>
     fetchMessages();
   }, [chatId, currentUser.token]);
 
-// ✅ Fetch block status
-useEffect(() => {
-  const fetchBlockStatus = async () => {
-    try {
-      const res = await fetch(
-        `${API_BASE_URL}/api/friends/block-status/${chatUser._id}`,
-        {
-          headers: { Authorization: `Bearer ${currentUser.token}` },
-        }
-      );
-      if (res.ok) {
-        const data = await res.json();
-        setIsBlocked(data.isBlocked || false);
-      } else {
-        console.error("Failed to fetch block status:", await res.text());
-      }
-    } catch (err) {
-      console.error("Failed to check block status:", err);
-    }
-  };
-  if (chatUser?._id) fetchBlockStatus();
-}, [chatUser, currentUser]);
 
-  // --- Socket listeners
+  useEffect(() => {
+    const fetchBlockStatus = async () => {
+      try {
+        const res = await fetch(
+          `${API_BASE_URL}/api/friends/block-status/${chatUser._id}`,
+          {
+            headers: { Authorization: `Bearer ${currentUser.token}` },
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setIsBlocked(data.isBlocked || false);
+        } else {
+          console.error("Failed to fetch block status:", await res.text());
+        }
+      } catch (err) {
+        console.error("Failed to check block status:", err);
+      }
+    };
+    if (chatUser?._id) fetchBlockStatus();
+  }, [chatUser, currentUser]);
+
+
   useEffect(() => {
     if (!socket) return;
 
@@ -159,13 +159,13 @@ useEffect(() => {
     };
 
     const handleChatCleared = ({ roomId, clearedBy }) => {
-  if (roomId === chatId) {
-    setMessages([]);
-    if (clearedBy !== currentUser._id) {
-      alert("This chat was cleared by the other user.");
-    }
-  }
-};
+      if (roomId === chatId) {
+        setMessages([]);
+        if (clearedBy !== currentUser._id) {
+          alert("This chat was cleared by the other user.");
+        }
+      }
+    };
 
 
     const handleDeleted = ({ messageId }) => {
@@ -201,11 +201,11 @@ useEffect(() => {
       socket.off("message-deleted", handleDeleted);
       socket.off("message-updated", handleUpdated);
       socket.off("typing", handleTyping);
-      socket.off("chat-cleared", handleChatCleared); 
+      socket.off("chat-cleared", handleChatCleared);
     };
   }, [socket, chatId]);
 
-  // --- Auto-scroll
+
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
@@ -213,7 +213,7 @@ useEffect(() => {
     if (isAtBottom) scrollToBottom();
   }, [messages]);
 
-  // --- Search logic
+
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
@@ -242,17 +242,17 @@ useEffect(() => {
     });
   };
 
-  // --- Send message
+
   const handleSend = async (payload = {}) => {
     const { content = "", attachments = [], editId } = payload;
     if (isBlocked) {
-      alert("You have blocked this user. Unblock them to send messages."); // 🟢 Prevent sending
+      alert("You have blocked this user. Unblock them to send messages.");
       return;
     }
 
     if (!content && (!attachments || attachments.length === 0)) return;
 
-    // If this is an edit of an existing message, call the REST API to update
+
     if (editId) {
       try {
         const res = await fetch(`${API_BASE_URL}/api/messages/${editId}`, {
@@ -278,7 +278,7 @@ useEffect(() => {
       return;
     }
 
-    // (existing send logic below)
+
     const tempId = `temp-${Date.now()}`;
     const optimisticMsg = {
       _id: tempId,
@@ -318,13 +318,13 @@ useEffect(() => {
           prev.map((m) =>
             m._id === tempId
               ? {
-                  ...m,
+                ...m,
+                status: "failed",
+                attachments: m.attachments.map((a) => ({
+                  ...a,
                   status: "failed",
-                  attachments: m.attachments.map((a) => ({
-                    ...a,
-                    status: "failed",
-                  })),
-                }
+                })),
+              }
               : m
           )
         );
@@ -360,67 +360,67 @@ useEffect(() => {
     setReplyTo(null);
   };
 
-const handleClearChat = async () => {
-  if (!window.confirm("Clear all messages from this chat?")) return;
-  try {
-    const res = await fetch(`${API_BASE_URL}/api/rooms/${chatId}/clear`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${currentUser.token}` },
-    });
-    const data = await res.json();
-    if (res.ok) {
-      setMessages([]);
-      alert(data.message || "Chat cleared successfully");
-    } else {
-      alert(data.error || "Failed to clear chat");
-    }
-  } catch (err) {
-    console.error("Failed to clear chat:", err);
-    alert("Failed to clear chat. Try again.");
-  }
-};
-const handleUnfriend = async () => {
-  if (!window.confirm(`Are you sure you want to unfriend ${chatUser.name}?`))
-    return;
-
-  try {
-    const res = await fetch(
-      `${API_BASE_URL}/api/friends/unfriend/${chatUser._id}`,
-      {
+  const handleClearChat = async () => {
+    if (!window.confirm("Clear all messages from this chat?")) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/api/rooms/${chatId}/clear`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessages([]);
+        alert(data.message || "Chat cleared successfully");
+      } else {
+        alert(data.error || "Failed to clear chat");
       }
-    );
-
-    let data = null;
-    try {
-      data = await res.json();
-    } catch {
-      console.warn("Server returned non-JSON response");
+    } catch (err) {
+      console.error("Failed to clear chat:", err);
+      alert("Failed to clear chat. Try again.");
     }
-
-    if (res.ok) {
-      alert(data?.message || "User unfriended successfully");
-      setShowMenu(false);
-
-      // ✅ OPTIONAL: Close or refresh chat after unfriending
-      if (typeof window.refreshUsers === "function") {
-        window.refreshUsers(); // if your sidebar reload function exists
-      }
-
-      // ✅ OPTIONAL: If current chat belongs to that user, reset chat view
-      if (chatUser._id === chatId) {
-        window.location.reload(); // or navigate back to home/chat list
-      }
+  };
+  const handleUnfriend = async () => {
+    if (!window.confirm(`Are you sure you want to unfriend ${chatUser.name}?`))
       return;
-    }
 
-    alert(data?.error || "Failed to unfriend user");
-  } catch (err) {
-    console.error("Unfriend request failed:", err);
-    alert("Network error: could not unfriend user");
-  }
-};
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/api/friends/unfriend/${chatUser._id}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${currentUser.token}` },
+        }
+      );
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch {
+        console.warn("Server returned non-JSON response");
+      }
+
+      if (res.ok) {
+        alert(data?.message || "User unfriended successfully");
+        setShowMenu(false);
+
+
+        if (typeof window.refreshUsers === "function") {
+          window.refreshUsers(); 
+        }
+
+
+        if (chatUser._id === chatId) {
+          window.location.reload(); // or navigate back to home/chat list
+        }
+        return;
+      }
+
+      alert(data?.error || "Failed to unfriend user");
+    } catch (err) {
+      console.error("Unfriend request failed:", err);
+      alert("Network error: could not unfriend user");
+    }
+  };
 
 
 
@@ -430,85 +430,85 @@ const handleUnfriend = async () => {
     if (!isBlocked) socket.emitTyping({ chatId, isTyping: text.length > 0 });
   };
 
- // ✅ Block / Unblock user
-const handleToggleBlock = async () => {
-  try {
-    const endpoint = isBlocked
-      ? `${API_BASE_URL}/api/friends/unblock/${chatUser._id}`
-      : `${API_BASE_URL}/api/friends/block/${chatUser._id}`;
 
-    const res = await fetch(endpoint, {
-      method: isBlocked ? "DELETE" : "POST",
-      headers: { Authorization: `Bearer ${currentUser.token}` },
-    });
-
-    const text = await res.text();
-    let data = {};
+  const handleToggleBlock = async () => {
     try {
-      data = JSON.parse(text);
-    } catch {
-      console.warn("Non-JSON response from server:", text);
-      alert("Unexpected response from server");
-      return;
-    }
+      const endpoint = isBlocked
+        ? `${API_BASE_URL}/api/friends/unblock/${chatUser._id}`
+        : `${API_BASE_URL}/api/friends/block/${chatUser._id}`;
 
-    if (res.ok) {
-      setIsBlocked(!isBlocked);
-      alert(isBlocked ? "User unblocked successfully" : "User blocked successfully");
-    } else {
-      alert(data.error || "Failed to update block status");
-    }
-  } catch (err) {
-    console.error("Block/unblock request failed:", err);
-    alert("Network error: could not update block status");
-  }
-  setShowMenu(false);
-};
+      const res = await fetch(endpoint, {
+        method: isBlocked ? "DELETE" : "POST",
+        headers: { Authorization: `Bearer ${currentUser.token}` },
+      });
 
-const handleMessageOption = (option, message) => {
-  console.log("Option selected:", option, "for message:", message);
-
-  switch (option) {
-    case "Reply":
-      setReplyTo(message);
-      break;
-
-    case "Forward":
-      setForwardMessage(message);
-      setShowForwardModal(true);
-      break;
-
-    case "Edit":
-      setEditingMessage(message);
-      break;
-
-    case "Delete":
-      if (window.confirm("Delete this message?")) {
-        // Call server to delete message; server will emit 'message-deleted' to update clients
-        (async () => {
-          try {
-            const res = await fetch(`${API_BASE_URL}/api/messages/${message._id}`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${currentUser.token}`, "Content-Type": "application/json" },
-              body: JSON.stringify({}),
-            });
-            if (!res.ok) {
-              const txt = await res.text();
-              throw new Error(txt || "Delete failed");
-            }
-          } catch (err) {
-            console.error("Delete failed:", err);
-            alert("Failed to delete message");
-          }
-        })();
-
+      const text = await res.text();
+      let data = {};
+      try {
+        data = JSON.parse(text);
+      } catch {
+        console.warn("Non-JSON response from server:", text);
+        alert("Unexpected response from server");
+        return;
       }
-      break;
 
-    default:
-      console.warn("Unknown option:", option);
-  }
-};
+      if (res.ok) {
+        setIsBlocked(!isBlocked);
+        alert(isBlocked ? "User unblocked successfully" : "User blocked successfully");
+      } else {
+        alert(data.error || "Failed to update block status");
+      }
+    } catch (err) {
+      console.error("Block/unblock request failed:", err);
+      alert("Network error: could not update block status");
+    }
+    setShowMenu(false);
+  };
+
+  const handleMessageOption = (option, message) => {
+    console.log("Option selected:", option, "for message:", message);
+
+    switch (option) {
+      case "Reply":
+        setReplyTo(message);
+        break;
+
+      case "Forward":
+        setForwardMessage(message);
+        setShowForwardModal(true);
+        break;
+
+      case "Edit":
+        setEditingMessage(message);
+        break;
+
+      case "Delete":
+        if (window.confirm("Delete this message?")) {
+          // Call server to delete message; server will emit 'message-deleted' to update clients
+          (async () => {
+            try {
+              const res = await fetch(`${API_BASE_URL}/api/messages/${message._id}`, {
+                method: "DELETE",
+                headers: { Authorization: `Bearer ${currentUser.token}`, "Content-Type": "application/json" },
+                body: JSON.stringify({}),
+              });
+              if (!res.ok) {
+                const txt = await res.text();
+                throw new Error(txt || "Delete failed");
+              }
+            } catch (err) {
+              console.error("Delete failed:", err);
+              alert("Failed to delete message");
+            }
+          })();
+
+        }
+        break;
+
+      default:
+        console.warn("Unknown option:", option);
+    }
+  };
 
   // --- Forward handler: create/get private room then send forwarded message
   const handleForwardToUsers = async (userIds) => {
@@ -560,106 +560,139 @@ const handleMessageOption = (option, message) => {
     }
   };
 
-  
+
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
-      <div className="px-4 py-3 border-b flex items-center justify-between bg-white shadow-sm relative">
+      
+      {/* //  PART 1 — HEADER + MENU (Telegram Style) */}
+      
+
+      <div className="px-4 py-3 flex items-center justify-between bg-white/70 backdrop-blur-md border-b border-blue-100 shadow-sm sticky top-0 z-20">
+
+        {/* LEFT : USER INFO */}
         <div className="flex items-center gap-3">
           <img
-            src={chatUser?.avatarUrl || "https://cdn-icons-png.flaticon.com/512/149/149071.png"}
-            alt={chatUser?.name || "User"}
-            className="w-10 h-10 rounded-full object-cover border"
+            src={chatUser?.avatarUrl || "/default-avatar.png"}
+            alt={chatUser?.name}
+            className="w-10 h-10 rounded-full object-cover shadow-sm border border-blue-200"
           />
-          <div>
-            <div className="text-sm font-semibold">{chatUser?.name || "Unknown User"}</div>
-            <div className={`text-xs ${chatUser?.online ? "text-green-500" : "text-gray-400"}`}>
-              {isBlocked
-                ? "You have blocked this user"
+
+          <div className="leading-tight">
+            <p className="text-sm font-semibold text-gray-800">
+              {chatUser?.name || "Unknown User"}
+            </p>
+
+            <p
+              className={`text-[11px] ${isBlocked
+                ? "text-red-500"
                 : chatUser?.online
-                ? "Online"
-                : chatUser?.lastSeen
-                ? `Last seen ${formatMessageTime(chatUser.lastSeen)}`
-                : "Offline"}
-            </div>
+                  ? "text-green-500"
+                  : "text-gray-400"
+                }`}
+            >
+              {isBlocked
+                ? "You blocked this user"
+                : chatUser?.online
+                  ? "Online"
+                  : chatUser?.lastSeen
+                    ? "Last seen " + formatMessageTime(chatUser.lastSeen)
+                    : "Offline"}
+            </p>
           </div>
         </div>
 
-        {/* Menu */}
+        {/* RIGHT : THREE-DOTS MENU */}
         <div ref={menuRef} className="relative">
           <button
-            className="p-2 rounded-full hover:bg-gray-200 transition"
             onClick={() => setShowMenu((prev) => !prev)}
+            className="p-2 rounded-full hover:bg-blue-100 text-blue-700 transition"
           >
-            <MoreVertical className="w-5 h-5 text-gray-600" />
+            <MoreVertical size={20} />
           </button>
 
           {showMenu && (
-  <div className="absolute right-0 mt-2 w-48 bg-white border border-blue-100 rounded-xl shadow-lg z-50 overflow-hidden animate-fade-in">
-    <button
-      onClick={() => {
-        alert("Show user profile (to be implemented)");
-        setShowMenu(false);
-      }}
-      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-gray-700 hover:bg-blue-50 transition"
-    >
-      <User size={16} /> View Profile
-    </button>
+            <div className="absolute right-0 mt-2 w-48 bg-white border border-blue-100 shadow-xl rounded-xl overflow-hidden animate-fadeIn z-30">
 
-    <button
-      onClick={handleToggleBlock}
-      className={`flex items-center gap-2 px-4 py-2 w-full text-left text-sm transition ${
-        isBlocked
-          ? "text-blue-600 hover:bg-blue-50"
-          : "text-red-600 hover:bg-red-50"
-      }`}
-    >
-      {isBlocked ? <Unlock size={16} /> : <Ban size={16} />}
-      {isBlocked ? "Unblock User" : "Block User"}
-    </button>
+              {/* VIEW PROFILE */}
+              <button
+                onClick={() => {
+                  alert("Profile popup goes here.");
+                  setShowMenu(false);
+                }}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 transition"
+              >
+                <User size={16} className="text-blue-500" />
+                View Profile
+              </button>
 
-    {/* 🆕 UNFRIEND OPTION */}
-    <button
-      onClick={handleUnfriend}
-      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-yellow-600 hover:bg-yellow-50 transition"
-    >
-      <Trash2 size={16} /> Unfriend User
-    </button>
+              {/* BLOCK / UNBLOCK */}
+              <button
+                onClick={handleToggleBlock}
+                className={`flex items-center gap-3 px-4 py-2 text-sm transition 
+            ${isBlocked ? "text-blue-600 hover:bg-blue-50" : "text-red-500 hover:bg-red-50"}
+          `}
+              >
+                {isBlocked ? <Unlock size={16} /> : <Ban size={16} />}
+                {isBlocked ? "Unblock User" : "Block User"}
+              </button>
 
-    <button
-      onClick={() => {
-        setShowSearch(true);
-        setShowMenu(false);
-      }}
-      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm hover:bg-blue-50 transition"
-    >
-      <Search size={16} /> Search
-    </button>
+              {/* UNFRIEND */}
+              <button
+                onClick={handleUnfriend}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition"
+              >
+                <Trash2 size={16} />
+                Unfriend
+              </button>
 
-    <button
-      onClick={handleClearChat}
-      className="flex items-center gap-2 px-4 py-2 w-full text-left text-sm text-red-600 hover:bg-red-50 transition"
-    >
-      <Trash2 size={16} /> Clear Chat
-    </button>
-  </div>
-)}
+              {/* SEARCH */}
+              <button
+                onClick={() => {
+                  setShowSearch(true);
+                  setShowMenu(false);
+                }}
+                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-50 transition"
+              >
+                <Search size={16} className="text-blue-600" />
+                Search
+              </button>
 
+              {/* CLEAR CHAT */}
+              <button
+                onClick={handleClearChat}
+                className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
+              >
+                <Trash2 size={16} />
+                Clear Chat
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Messages */}
-      <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-6">
+
+      
+      
+      
+      <div
+        ref={listRef}
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent"
+      >
+
         {loading ? (
-          <div className="text-center text-xs text-gray-400">Loading...</div>
+          <div className="text-center text-xs text-gray-400 py-4">Loading...</div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-400">No messages yet</div>
+          <div className="flex flex-col items-center justify-center text-gray-400 py-10">
+            <p>No messages yet</p>
+          </div>
         ) : (
           groupMessagesByDate(messages).map(({ dateKey, messages }) => (
             <div key={dateKey}>
-              <div className="flex justify-center my-2">
-                <span className="text-xs text-gray-500 bg-gray-200 px-3 py-1 rounded-full shadow-sm">
+
+              {/* DATE SEPARATOR */}
+              <div className="flex justify-center mb-3">
+                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
                   {formatChatDate(dateKey)}
                 </span>
               </div>
@@ -675,15 +708,17 @@ const handleMessageOption = (option, message) => {
                     }
                     currentUser={currentUser}
                     scrollRef={(el) => (messageRefs.current[msg._id] = el)}
-                      onOption={handleMessageOption}              // ✅ Added this line
-                      onScrollToMessage={scrollToMessage}    
+                    onOption={handleMessageOption}
+                    onScrollToMessage={scrollToMessage}
                   />
                 ))}
               </div>
+
             </div>
           ))
         )}
       </div>
+
 
       {/* Typing Indicator */}
       {!isBlocked && typingUsers.length > 0 && (
@@ -692,11 +727,15 @@ const handleMessageOption = (option, message) => {
         </div>
       )}
 
-      {/* Input (disabled if blocked) */}
-      <div className="sticky bottom-0 bg-white border-t shadow-sm z-10">
+      
+      {/* // PART 3 — INPUT BAR (Telegram Style) */}
+      
+
+      <div className="sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-blue-100 shadow-lg p-3">
+
         {isBlocked ? (
-          <div className="text-center text-sm text-gray-400 py-3">
-            You have blocked this user. Unblock to chat again.
+          <div className="text-center text-sm text-gray-400 py-2">
+            You blocked this user. Unblock to chat again.
           </div>
         ) : (
           <MessageInput
@@ -710,19 +749,82 @@ const handleMessageOption = (option, message) => {
             }}
             onCancelReply={() => setReplyTo(null)}
             currentUser={currentUser}
+            className="rounded-2xl shadow-md bg-gray-100 border border-gray-200"
           />
         )}
+
       </div>
 
-      {/* Forward Modal */}
+
+     
+     
+      
+      {/* // PART 4 — FORWARD MODAL + SEARCH UI */}
+      
+
+      {/* SEARCH OVERLAY */}
+      {showSearch && (
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-xl w-80 p-4 space-y-3">
+
+            {/* SEARCH INPUT */}
+            <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
+              <Search className="w-4 h-4 text-gray-500" />
+              <input
+                type="text"
+                placeholder="Search messages..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 bg-transparent outline-none text-sm px-2"
+              />
+            </div>
+
+            {/* NAVIGATION FOR RESULTS */}
+            {searchResults.length > 0 && (
+              <div className="flex justify-between items-center text-xs text-gray-500">
+                <button
+                  className="px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300"
+                  onClick={() => handleSearchNavigate("prev")}
+                >
+                  Prev
+                </button>
+
+                <span>
+                  {currentSearchIndex + 1} / {searchResults.length}
+                </span>
+
+                <button
+                  className="px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300"
+                  onClick={() => handleSearchNavigate("next")}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+
+            {/* CLOSE BUTTON */}
+            <button
+              onClick={() => setShowSearch(false)}
+              className="w-full py-2 text-sm bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* FORWARD MODAL */}
       {showForwardModal && (
         <ForwardModal
-          users={allUsers}
+          users={allUsers.filter((u) =>
+            (friendIds || []).some((id) => String(id) === String(u._id))
+          )}
           excludeUserIds={[currentUser._id]}
           onClose={() => setShowForwardModal(false)}
           onForward={handleForwardToUsers}
         />
       )}
+
     </div>
   );
 };
@@ -733,6 +835,8 @@ ChatWindow.propTypes = {
   currentUser: PropTypes.object.isRequired,
   chatUser: PropTypes.object.isRequired,
   allUsers: PropTypes.array,
+  friendIds: PropTypes.array,
 };
 
 export default ChatWindow;
+

@@ -1,3 +1,4 @@
+// ChatPage.jsx
 import React, { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import UsersList from "../Sidebar/UserList";
@@ -8,6 +9,14 @@ import { formatMessageTime } from "../../utils/time";
 import { MessageCircle, Loader2, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
+/**
+ * ChatPage
+ * - Responsive 2-column layout (desktop) / single-column (mobile)
+ * - Smooth transitions with framer-motion
+ * - Keeps all previous features: sockets (room-upsert, user-list, presence),
+ *   fetching initial data, start private chat, create private room, notifications,
+ *   visibility refresh, friend-data handling, mobile back button.
+ */
 const ChatPage = ({ currentUser }) => {
   const socketHook = useSocket(currentUser);
   const { socket, joinRoom } = socketHook;
@@ -23,26 +32,28 @@ const ChatPage = ({ currentUser }) => {
     blocked: [],
   });
   const [loading, setLoading] = useState(true);
-  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+  const [isMobileView, setIsMobileView] = useState(
+    typeof window !== "undefined" ? window.innerWidth < 768 : true
+  );
 
   const apiBase =
     process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
 
-  // 🧭 Detect mobile vs desktop
+  // Responsive listener
   useEffect(() => {
     const handleResize = () => setIsMobileView(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // 🧭 Ask for notification permission
+  // Notification permission (non-blocking)
   useEffect(() => {
-    if (Notification.permission === "default") {
-      Notification.requestPermission();
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission().catch(() => {});
     }
   }, []);
 
-  // 🔁 Fetch initial data
+  // Fetch initial rooms/users + friend data
   async function fetchInitialData() {
     if (!currentUser?.token) return;
     setLoading(true);
@@ -58,16 +69,18 @@ const ChatPage = ({ currentUser }) => {
       ]);
 
       const roomsData = await roomsRes.json();
-      const data = await usersRes.json();
-      const usersData = data.users;
+      const usersDataRaw = await usersRes.json();
 
-      setRooms(roomsData);
-      setUsers(usersData.map((u) => ({ ...u, unreadCount: 0 })));
+      // roomsData may be array or object depending on your API - adjust if needed
+      setRooms(Array.isArray(roomsData) ? roomsData : roomsData.rooms || []);
+      const usersList = usersDataRaw.users || [];
+      setUsers(usersList.map((u) => ({ ...u, unreadCount: 0 })));
+
       setFriendData({
-        friends: data.currentUserFriends,
-        received: data.currentUserFriendRequests,
-        sent: data.currentUserSentRequests,
-        blocked: data.currentUserBlockedUsers,
+        friends: usersDataRaw.currentUserFriends || [],
+        received: usersDataRaw.currentUserFriendRequests || [],
+        sent: usersDataRaw.currentUserSentRequests || [],
+        blocked: usersDataRaw.currentUserBlockedUsers || [],
       });
     } catch (err) {
       console.error("Failed to fetch initial data:", err);
@@ -78,19 +91,20 @@ const ChatPage = ({ currentUser }) => {
 
   useEffect(() => {
     fetchInitialData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentUser]);
 
-  // 🕓 Refresh when tab refocuses
+  // Refresh when tab becomes visible
   useEffect(() => {
-    const handleVisibilityChange = () => {
+    const onVisibility = () => {
       if (document.visibilityState === "visible") fetchInitialData();
     };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () =>
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 💬 Handle sockets
+  // Socket event handlers
   useEffect(() => {
     if (!socket) return;
 
@@ -100,6 +114,7 @@ const ChatPage = ({ currentUser }) => {
         if (idx === -1) return [updatedRoom, ...prev];
         const copy = [...prev];
         copy[idx] = { ...copy[idx], ...updatedRoom };
+        // sort by lastMessage createdAt desc
         return copy.sort(
           (a, b) =>
             new Date(b.lastMessage?.createdAt || 0) -
@@ -109,26 +124,22 @@ const ChatPage = ({ currentUser }) => {
     };
 
     const onUserList = (list) => {
-      const sameUniversityUsers = list.filter(
+      // Keep only same university users + maintain unreadCount if present
+      const sameUniversity = list.filter(
         (u) => u.universityId === currentUser.universityId
       );
-      const uniqueUsers = Array.from(
-        new Map(sameUniversityUsers.map((u) => [u._id, u])).values()
-      );
+      const unique = Array.from(new Map(sameUniversity.map((u) => [u._id, u])).values());
       setUsers((prev) =>
-        uniqueUsers.map((u) => {
+        unique.map((u) => {
           const existing = prev.find((p) => p._id === u._id);
           return { ...u, unreadCount: existing?.unreadCount || 0 };
         })
       );
     };
 
-    const onPresence = ({ userId, online, lastSeen }) =>
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, online, lastSeen } : u
-        )
-      );
+    const onPresence = ({ userId, online, lastSeen }) => {
+      setUsers((prev) => prev.map((u) => (u._id === userId ? { ...u, online, lastSeen } : u)));
+    };
 
     socket.on("room-upsert", onRoomsUpdate);
     socket.on("user-list", onUserList);
@@ -139,27 +150,34 @@ const ChatPage = ({ currentUser }) => {
       socket.off("user-list", onUserList);
       socket.off("presence", onPresence);
     };
-  }, [socket, currentUser.universityId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [socket, currentUser?.universityId]);
 
+  // Start or open private chat with a user
   const handleStartPrivateChat = async (user) => {
-    setUsers((prev) =>
-      prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u))
-    );
+    // reset unread for this user in UI
+    setUsers((prev) => prev.map((u) => (u._id === user._id ? { ...u, unreadCount: 0 } : u)));
     setSelectedUser(user);
 
-    const existingRoom = rooms.find(
+    // check existing private room
+    const existing = rooms.find(
       (r) =>
         !r.isGroup &&
         r.members?.some((m) => m._id === user._id) &&
         r.members?.some((m) => m._id === currentUser._id)
     );
 
-    if (existingRoom) {
-      setActiveRoomId(existingRoom._id);
-      joinRoom(existingRoom._id);
+    if (existing) {
+      setActiveRoomId(existing._id);
+      try {
+        joinRoom(existing._id);
+      } catch (e) {
+        // joinRoom may be async; ignore errors in UI
+      }
       return;
     }
 
+    // create private room via API
     try {
       const res = await fetch(`${apiBase}/api/private`, {
         method: "POST",
@@ -169,10 +187,14 @@ const ChatPage = ({ currentUser }) => {
         },
         body: JSON.stringify({ targetId: user._id }),
       });
-      const room = await res.json();
-      setRooms((prev) => [room, ...prev.filter((r) => r._id !== room._id)]);
-      setActiveRoomId(room._id);
-      joinRoom(room._id);
+
+      const createdRoom = await res.json();
+      // prepend and keep uniqueness
+      setRooms((prev) => [createdRoom, ...prev.filter((r) => r._id !== createdRoom._id)]);
+      setActiveRoomId(createdRoom._id);
+      try {
+        joinRoom(createdRoom._id);
+      } catch (e) {}
     } catch (err) {
       console.error("Failed to start private chat:", err);
     }
@@ -186,37 +208,39 @@ const ChatPage = ({ currentUser }) => {
   return (
     <div className="h-screen flex bg-gradient-to-br from-blue-50 to-white text-gray-900 overflow-hidden">
       <div className="w-full flex flex-col md:flex-row transition-all duration-300 ease-in-out">
-        {/* Sidebar */}
+        {/* Sidebar (UsersList) */}
         <AnimatePresence initial={false}>
           {(!isMobileView || !activeRoomId) && (
             <motion.aside
               key="sidebar"
-              initial={{ x: isMobileView ? 0 : 0 }}
+              initial={{ x: isMobileView ? 0 : 0, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -400, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="md:w-80 w-full flex flex-col bg-white border-r border-blue-100 shadow-md md:static absolute inset-0 md:translate-x-0"
+              transition={{ duration: 0.28 }}
+              className="md:w-80 w-full flex flex-col bg-white border-r border-blue-100 shadow-md md:static absolute inset-0 md:translate-x-0 z-20 rounded-r-xl"
             >
               {/* Current user header */}
               <div className="px-5 py-4 flex items-center gap-3 border-b bg-blue-100/60 backdrop-blur-md">
                 <img
                   src={currentUser.avatarUrl || "/default-avatar.png"}
                   alt={currentUser.name}
-                  className="w-12 h-12 rounded-full border border-blue-200 object-cover"
+                  className="w-12 h-12 rounded-full border border-blue-200 object-cover shadow-sm"
                 />
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-900">
+                <div className="min-w-0">
+                  <h2 className="text-sm font-semibold text-gray-900 truncate">
                     {currentUser.name}
                   </h2>
-                  <OnlineStatus user={{ ...currentUser, online: true }} small />
+                  <div className="mt-0.5">
+                    <OnlineStatus user={{ ...currentUser, online: true }} small />
+                  </div>
                 </div>
               </div>
 
-              {/* Users list */}
-              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 hover:scrollbar-thumb-blue-300 transition">
+              {/* UsersList component */}
+              <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200 hover:scrollbar-thumb-blue-300">
                 {loading ? (
-                  <div className="flex flex-col items-center justify-center h-full text-blue-500">
-                    <Loader2 className="w-5 h-5 animate-spin mb-2" />
+                  <div className="flex flex-col items-center justify-center h-full text-blue-500 py-12">
+                    <Loader2 className="w-6 h-6 animate-spin mb-2" />
                     <span className="text-sm">Loading chats...</span>
                   </div>
                 ) : (
@@ -225,61 +249,58 @@ const ChatPage = ({ currentUser }) => {
                     currentUserId={currentUser._id}
                     currentUserUniversityId={currentUser.universityId}
                     onStartPrivateChat={handleStartPrivateChat}
-                    socket={socket}
                     token={currentUser.token}
-                    activeChatId={activeRoomId}
                     friendData={friendData}
                     refreshUsers={fetchInitialData}
                   />
                 )}
               </div>
 
-              <div className="text-xs text-center py-3 text-gray-400 border-t border-gray-100">
+              <div className="text-xs text-center py-3 text-gray-400 border-t border-blue-100">
                 Last sync: {formatMessageTime(new Date())}
               </div>
             </motion.aside>
           )}
         </AnimatePresence>
 
-        {/* Chat Window */}
+        {/* Chat area */}
         <AnimatePresence initial={false}>
           {(!isMobileView || activeRoomId) && (
             <motion.main
               key="chat"
-              initial={{ x: isMobileView ? 400 : 0 }}
+              initial={{ x: isMobileView ? 400 : 0, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: 400, opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.28 }}
               className="flex-1 flex flex-col bg-blue-50/30 relative"
             >
               {activeRoomId && selectedUser ? (
                 <>
+                  {/* Mobile back button */}
                   {isMobileView && (
                     <button
                       onClick={handleBackToList}
-                      className="absolute top-3 left-3 z-10 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-md hover:bg-blue-100 transition"
+                      className="absolute top-3 left-3 z-30 bg-white/80 backdrop-blur-md p-2 rounded-full shadow-md hover:bg-blue-100 transition"
+                      aria-label="Back to list"
                     >
                       <ArrowLeft className="w-5 h-5 text-blue-600" />
                     </button>
                   )}
+
                   <ChatWindow
                     chatId={activeRoomId}
                     socket={socketHook}
                     currentUser={currentUser}
                     chatUser={selectedUser}
                     allUsers={users}
-                    
+                    friendIds={friendData.friends || []}
                   />
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full text-blue-400">
                   <MessageCircle className="w-12 h-12 mb-3 opacity-70" />
-                  <p className="text-lg font-medium">
-                    Select a chat to start messaging
-                  </p>
-                  <p className="text-sm text-gray-400 mt-1">
-                    Your conversations will appear here
-                  </p>
+                  <p className="text-lg font-medium">Select a chat to start messaging</p>
+                  <p className="text-sm text-gray-400 mt-1">Your conversations will appear here</p>
                 </div>
               )}
             </motion.main>
@@ -298,7 +319,6 @@ ChatPage.propTypes = {
     token: PropTypes.string.isRequired,
     universityId: PropTypes.string.isRequired,
   }).isRequired,
-
 };
 
 export default ChatPage;
