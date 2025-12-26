@@ -1,9 +1,8 @@
-// src/components/pages/RegisterUniversity.js
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { Loader2 } from "lucide-react";
-import { useNavigate,Link } from "react-router-dom";
-import "./css/AuthLayout.css"; // reuse same CSS
+import { Loader2, Plus, Trash2 } from "lucide-react";
+import { useNavigate, Link } from "react-router-dom";
+import "./css/AuthLayout.css";
 
 const RegisterUniversity = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +12,7 @@ const RegisterUniversity = () => {
     studentCode: "",
     email: "",
     password: "",
+    departments: [""], // start with one department
   });
 
   const [loading, setLoading] = useState(false);
@@ -20,6 +20,24 @@ const RegisterUniversity = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleDepartmentChange = (index, value) => {
+    const updated = [...formData.departments];
+    updated[index] = value;
+    setFormData({ ...formData, departments: updated });
+  };
+
+  const addDepartment = () => {
+    setFormData({
+      ...formData,
+      departments: [...formData.departments, ""],
+    });
+  };
+
+  const removeDepartment = (index) => {
+    const updated = formData.departments.filter((_, i) => i !== index);
+    setFormData({ ...formData, departments: updated });
   };
 
   const handleRegister = async (e) => {
@@ -39,6 +57,7 @@ const RegisterUniversity = () => {
           universityCode: formData.universityCode,
           teacherCode: formData.teacherCode,
           studentCode: formData.studentCode,
+          departments: formData.departments.filter(d => d.trim() !== ""),
         }),
       });
 
@@ -54,35 +73,21 @@ const RegisterUniversity = () => {
       navigate("/admin-login");
     } catch (err) {
       setLoading(false);
-      console.error("University Register Error:", err);
+      console.error(err);
       alert("Server error. Please try again later.");
     }
   };
 
   return (
-    <div className="login-wrapper">
+    <div className="register-uni-wrapper">
       <motion.div
-        className="login-card"
+        className="register-uni-card"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
       >
-        <motion.h2
-          className="login-title"
-          initial={{ y: -30, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-        >
-          Register Your University
-        </motion.h2>
+        <h2 className="register-uni-title">Register Your University</h2>
 
-        <motion.form
-          onSubmit={handleRegister}
-          className="login-form"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2 }}
-        >
+        <form className="register-uni-form" onSubmit={handleRegister}>
           <input
             type="text"
             name="universityName"
@@ -91,14 +96,16 @@ const RegisterUniversity = () => {
             onChange={handleChange}
             required
           />
+
           <input
             type="text"
             name="universityCode"
-            placeholder="University Code (unique)"
+            placeholder="University Code"
             value={formData.universityCode}
             onChange={handleChange}
             required
           />
+
           <input
             type="text"
             name="teacherCode"
@@ -107,6 +114,7 @@ const RegisterUniversity = () => {
             onChange={handleChange}
             required
           />
+
           <input
             type="text"
             name="studentCode"
@@ -115,6 +123,7 @@ const RegisterUniversity = () => {
             onChange={handleChange}
             required
           />
+
           <input
             type="email"
             name="email"
@@ -123,6 +132,7 @@ const RegisterUniversity = () => {
             onChange={handleChange}
             required
           />
+
           <input
             type="password"
             name="password"
@@ -131,22 +141,50 @@ const RegisterUniversity = () => {
             onChange={handleChange}
             required
           />
-          <button type="submit" disabled={loading}>
-            {loading ? (
-              <Loader2 className="animate-spin" size={18} />
-            ) : (
-              "Register University"
-            )}
-          </button>
-        </motion.form>
 
-        <div className="login-links">
-          <p>
-            Already registered?{" "}
-            <Link to="/admin-login" className="link-primary">
-              Login as Admin
-            </Link>
-          </p>
+          {/* Departments Section */}
+          <div className="department-section">
+            <p className="section-title">Departments</p>
+
+            {formData.departments.map((dept, index) => (
+              <div className="department-row" key={index}>
+                <input
+                  type="text"
+                  placeholder={`Department ${index + 1}`}
+                  value={dept}
+                  onChange={(e) =>
+                    handleDepartmentChange(index, e.target.value)
+                  }
+                  required
+                />
+                {formData.departments.length > 1 && (
+                  <button
+                    type="button"
+                    className="remove-btn"
+                    onClick={() => removeDepartment(index)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            <button
+              type="button"
+              className="add-dept-btn"
+              onClick={addDepartment}
+            >
+              <Plus size={16} /> Add Department
+            </button>
+          </div>
+
+          <button type="submit" disabled={loading}>
+            {loading ? <Loader2 className="animate-spin" /> : "Register University"}
+          </button>
+        </form>
+
+        <div className="register-uni-back">
+          Already registered? <Link to="/admin-login">Login as Admin</Link>
         </div>
       </motion.div>
     </div>

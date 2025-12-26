@@ -38,7 +38,7 @@ const RegisterUser = () => {
     profilePhoto: null,
   });
 
-  /* ===== FETCH UNIVERSITIES ===== */
+  /* ================= FETCH UNIVERSITIES ================= */
   useEffect(() => {
     fetch("http://localhost:4000/api/university/universities")
       .then((res) => res.json())
@@ -46,29 +46,37 @@ const RegisterUser = () => {
       .catch(console.error);
   }, []);
 
-  /* ===== FETCH DEPARTMENTS ===== */
+  /* ================= FETCH DEPARTMENTS ================= */
   useEffect(() => {
-    if (!formData.universityCode) return;
-    fetch(
-      `http://localhost:4000/api/university/${formData.universityCode}/departments`
-    )
+    if (!formData.universityCode) {
+      setDepartments([]);
+      return;
+    }
+
+    fetch(`http://localhost:4000/api/university/${formData.universityCode}/departments`)
       .then((res) => res.json())
-      .then(setDepartments)
+      .then((data) => {
+        setDepartments(data.departments || []);
+      })
       .catch(console.error);
   }, [formData.universityCode]);
 
-  /* ===== FETCH SEMESTERS ===== */
+  /* ================= FETCH SEMESTERS ================= */
   useEffect(() => {
-    if (!formData.department) return;
-    fetch(
-      `http://localhost:4000/api/university/department/${formData.department}/semesters`
-    )
+    if (!formData.department) {
+      setSemesters([]);
+      return;
+    }
+
+    fetch(`http://localhost:4000/api/university/department/${formData.department}/semesters`)
       .then((res) => res.json())
-      .then(setSemesters)
+      .then((data) => {
+        setSemesters(data.semesters || []);
+      })
       .catch(console.error);
   }, [formData.department]);
 
-  /* ===== HANDLE CHANGE ===== */
+  /* ================= HANDLE CHANGE ================= */
   const handleChange = (e) => {
     const { name, value, files } = e.target;
 
@@ -85,7 +93,7 @@ const RegisterUser = () => {
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
 
-  /* ===== SUBMIT ===== */
+  /* ================= SUBMIT ================= */
   const handleRegister = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -151,105 +159,49 @@ const RegisterUser = () => {
         </div>
 
         <form onSubmit={handleRegister} encType="multipart/form-data" className="auth-form">
-          {/* STEP 1 */}
+
+          {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <>
               <div className="grid-2">
-                <input
-                  name="name"
-                  placeholder="Full Name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-                <input
-                  name="phone"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  required
-                >
+                <input name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                <input name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                <input name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                <input name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} required />
+
+                <select name="gender" value={formData.gender} onChange={handleChange} required>
                   <option value="">Select Gender</option>
                   <option>Male</option>
                   <option>Female</option>
                 </select>
-                <input
-                  name="dob"
-                  type="date"
-                  value={formData.dob}
-                  onChange={handleChange}
-                  required
-                />
+
+                <input name="dob" type="date" value={formData.dob} onChange={handleChange} required />
               </div>
+
               <button type="button" className="auth-btn" onClick={nextStep}>Next</button>
             </>
           )}
 
-          {/* STEP 2 */}
+          {/* ================= STEP 2 ================= */}
           {step === 2 && (
             <>
               <div className="grid-2">
-                <select
-                  name="universityCode"
-                  value={formData.universityCode}
-                  onChange={handleChange}
-                  required
-                >
+                <select name="universityCode" value={formData.universityCode} onChange={handleChange} required>
                   <option value="">Select University</option>
                   {universities.map((u) => (
                     <option key={u._id} value={u.code}>{u.name}</option>
                   ))}
                 </select>
 
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  required
-                >
+                <select name="department" value={formData.department} onChange={handleChange} required>
                   <option value="">Select Department</option>
                   {departments.map((d, i) => (
                     <option key={i} value={d}>{d}</option>
                   ))}
                 </select>
 
-                <input
-                  name="course"
-                  placeholder="Course (B.Tech / M.Tech / MCA)"
-                  value={formData.course}
-                  onChange={handleChange}
-                  required
-                />
-
                 {role === "student" && (
-                  <select
-                    name="semester"
-                    value={formData.semester}
-                    onChange={handleChange}
-                    required
-                  >
+                  <select name="semester" value={formData.semester} onChange={handleChange} required>
                     <option value="">Select Semester</option>
                     {semesters.map((s, i) => (
                       <option key={i} value={s}>{s}</option>
@@ -266,31 +218,13 @@ const RegisterUser = () => {
                 />
 
                 {role === "student" && (
-                  <input
-                    name="enrollmentNumber"
-                    placeholder="Enrollment Number"
-                    value={formData.enrollmentNumber}
-                    onChange={handleChange}
-                    required
-                  />
+                  <input name="enrollmentNumber" placeholder="Enrollment Number" value={formData.enrollmentNumber} onChange={handleChange} required />
                 )}
 
                 {role === "teacher" && (
                   <>
-                    <input
-                      name="employeeId"
-                      placeholder="Employee ID"
-                      value={formData.employeeId}
-                      onChange={handleChange}
-                      required
-                    />
-                    <input
-                      name="designation"
-                      placeholder="Designation"
-                      value={formData.designation}
-                      onChange={handleChange}
-                      required
-                    />
+                    <input name="employeeId" placeholder="Employee ID" value={formData.employeeId} onChange={handleChange} required />
+                    <input name="designation" placeholder="Designation" value={formData.designation} onChange={handleChange} required />
                   </>
                 )}
               </div>
@@ -302,17 +236,10 @@ const RegisterUser = () => {
             </>
           )}
 
-          {/* STEP 3 */}
+          {/* ================= STEP 3 ================= */}
           {step === 3 && (
             <>
-              <input
-                type="file"
-                name="profilePhoto"
-                hidden
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleChange}
-              />
+              <input type="file" name="profilePhoto" hidden ref={fileInputRef} accept="image/*" onChange={handleChange} />
 
               <div className="custom-file-upload" onClick={() => fileInputRef.current.click()}>
                 <span>{fileName}</span>
