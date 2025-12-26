@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import AdminHeader from "../admin/AdminHeader";
+
 import {
   CheckCircle,
   XCircle,
@@ -73,7 +75,10 @@ const AdminDashboard = () => {
   );
 
   return (
+    <>
+    <AdminHeader />
     <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-indigo-50 p-6">
+      
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6">
 
         <h2 className="text-3xl font-bold text-indigo-800 text-center mb-6">
@@ -240,6 +245,7 @@ const AdminDashboard = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
