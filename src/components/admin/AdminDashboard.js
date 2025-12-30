@@ -1,51 +1,44 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Loader2, RefreshCcw } from "lucide-react";
+import AdminHeader from "../admin/AdminHeader";
+
+import {
+  CheckCircle,
+  XCircle,
+  Loader2,
+  RefreshCcw,
+  Eye
+} from "lucide-react";
 
 const AdminDashboard = () => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
 
-  // ✅ Load admin from localStorage
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const universityCode = currentUser?.universityCode;
 
   useEffect(() => {
-    console.log("🎓 Admin loaded:", currentUser);
-    console.log("🏫 University Code:", universityCode);
     if (universityCode) fetchRequests();
   }, [universityCode]);
 
-  // ✅ Fetch all pending registration requests
   const fetchRequests = async () => {
-    if (!universityCode) {
-      setMessage("⚠️ No university code found for this admin.");
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch(
         `${process.env.REACT_APP_API_URL}/api/admin/pending-requests/${universityCode}`
       );
       const data = await res.json();
-
-      if (res.ok) {
-        setRequests(data);
-        console.log("✅ Loaded pending requests:", data);
-      } else {
-        setMessage(data.error || "Failed to fetch requests");
-      }
-    } catch (err) {
-      console.error("❌ Error fetching requests:", err);
-      setMessage("Server error while fetching requests");
+      if (res.ok) setRequests(data);
+      else setMessage(data.error || "Failed to fetch requests");
+    } catch {
+      setMessage("Server error");
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Handle approve/reject actions
   const handleAction = async (id, action) => {
     setLoading(true);
     try {
@@ -56,26 +49,25 @@ const AdminDashboard = () => {
 
       const res = await fetch(`${process.env.REACT_APP_API_URL}${endpoint}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" }
       });
 
       const data = await res.json();
       if (res.ok) {
         setMessage(data.message);
-        fetchRequests(); // refresh list
+        setSelectedUser(null);
+        fetchRequests();
       } else {
         setMessage(data.error || "Action failed");
       }
-    } catch (err) {
-      console.error("❌ Action Error:", err);
-      setMessage("Server error while performing action");
+    } catch {
+      setMessage("Server error");
     } finally {
       setLoading(false);
       setTimeout(() => setMessage(""), 3000);
     }
   };
 
-  // ✅ Filter by search
   const filteredRequests = requests.filter(
     (r) =>
       r.name?.toLowerCase().includes(search.toLowerCase()) ||
@@ -83,111 +75,88 @@ const AdminDashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-indigo-50 flex flex-col items-center p-6 font-poppins">
-      <div className="w-full max-w-6xl bg-white rounded-2xl shadow-xl p-6 mt-6">
-        <h2 className="text-3xl font-bold text-indigo-800 mb-6 text-center">
+    <>
+    <AdminHeader />
+    <div className="min-h-screen bg-gradient-to-br from-indigo-100 via-white to-indigo-50 p-6">
+      
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-6">
+
+        <h2 className="text-3xl font-bold text-indigo-800 text-center mb-6">
           Admin Dashboard
         </h2>
 
-        {/* 🔍 Search & Refresh */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+        {/* Search */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
           <input
-            type="text"
             placeholder="Search by name or email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-1/2 focus:ring-2 focus:ring-indigo-400 outline-none"
+            className="border px-4 py-2 rounded-lg w-full sm:w-1/2"
           />
           <button
             onClick={fetchRequests}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold shadow-md transition-all"
+            className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg"
           >
             <RefreshCcw size={18} /> Refresh
           </button>
         </div>
 
-        {/* ✅ Status message */}
         {message && (
-          <p className="text-center text-indigo-700 font-medium mb-4">
-            {message}
-          </p>
+          <p className="text-center text-indigo-700 mb-4">{message}</p>
         )}
 
-        {/* ✅ Loader */}
         {loading ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="animate-spin text-indigo-500" size={36} />
+          <div className="flex justify-center py-20">
+            <Loader2 className="animate-spin text-indigo-600" size={36} />
           </div>
         ) : filteredRequests.length === 0 ? (
-          <p className="text-center text-gray-600 text-lg">
-            🎉 No pending registration requests.
+          <p className="text-center text-gray-600">
+            No pending requests 🎉
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
+            <table className="min-w-full border rounded-lg">
               <thead className="bg-indigo-600 text-white">
                 <tr>
                   <th className="px-4 py-3 text-left">Name</th>
-                  <th className="px-4 py-3 text-left">Email</th>
-                  <th className="px-4 py-3 text-left">Role</th>
-                  <th className="px-4 py-3 text-left">Requested On</th>
-                  <th className="px-4 py-3 text-center">Actions</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Role</th>
+                  <th className="px-4 py-3">Details</th>
+                  <th className="px-4 py-3">Actions</th>
                 </tr>
               </thead>
+
               <tbody>
                 {filteredRequests.map((req) => (
                   <tr
                     key={req._id}
-                    className="border-b hover:bg-indigo-50 transition"
+                    className="border-b hover:bg-indigo-50"
                   >
-                    <td className="px-4 py-3 font-medium text-gray-800">
-                      {req.name}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{req.email}</td>
-                    <td className="px-4 py-3 capitalize text-gray-700">
-                      {req.role}
-                    </td>
-                    <td className="px-4 py-3 text-gray-500 time-cell">
-                      {req.createdAt
-                        ? (() => {
-                            const date = new Date(req.createdAt);
-                            const today = new Date();
-                            const yesterday = new Date();
-                            yesterday.setDate(today.getDate() - 1);
+                    <td className="px-4 py-3">{req.name}</td>
+                    <td className="px-4 py-3">{req.email}</td>
+                    <td className="px-4 py-3 capitalize">{req.role}</td>
 
-                            const isToday = date.toDateString() === today.toDateString();
-                            const isYesterday = date.toDateString() === yesterday.toDateString();
-
-                            const day = String(date.getDate()).padStart(2, "0");
-                            const month = String(date.getMonth() + 1).padStart(2, "0");
-                            const year = date.getFullYear();
-                            const hours = date.getHours() % 12 || 12;
-                            const minutes = String(date.getMinutes()).padStart(2, "0");
-                            const ampm = date.getHours() >= 12 ? "PM" : "AM";
-
-                            const time = `${hours}:${minutes} ${ampm}`;
-
-                            if (isToday) return `Today • ${time}`;
-                            if (isYesterday) return `Yesterday • ${time}`;
-                            return `${day}-${month}-${year} • ${time}`;
-                          })()
-                        : "—"}
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => setSelectedUser(req)}
+                        className="text-indigo-600 hover:underline flex items-center gap-1 mx-auto"
+                      >
+                        <Eye size={16} /> View
+                      </button>
                     </td>
 
-                    <td className="px-4 py-3 text-center flex justify-center gap-2">
+                    <td className="px-4 py-3 flex gap-2 justify-center">
                       <button
                         onClick={() => handleAction(req._id, "approve")}
-                        className="flex items-center gap-1 bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-md transition"
+                        className="bg-green-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"
                       >
-                        <CheckCircle size={16} />
-                        Approve
+                        <CheckCircle size={16} /> Approve
                       </button>
                       <button
                         onClick={() => handleAction(req._id, "reject")}
-                        className="flex items-center gap-1 bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg font-medium shadow-md transition"
+                        className="bg-red-500 text-white px-3 py-1.5 rounded-lg flex items-center gap-1"
                       >
-                        <XCircle size={16} />
-                        Reject
+                        <XCircle size={16} /> Reject
                       </button>
                     </td>
                   </tr>
@@ -197,7 +166,86 @@ const AdminDashboard = () => {
           </div>
         )}
       </div>
+
+      {/* ================= USER DETAILS MODAL ================= */}
+      {selectedUser && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-2xl relative shadow-xl">
+
+            <h3 className="text-2xl font-bold text-indigo-700 text-center mb-4">
+              User Verification
+            </h3>
+
+            <div className="flex justify-center mb-4">
+              <img
+                src={selectedUser.profilePhoto || "/avatar.png"}
+                alt="Profile"
+                className="w-28 h-28 rounded-full border object-cover"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+              <p><b>Name:</b> {selectedUser.name}</p>
+              <p><b>Email:</b> {selectedUser.email}</p>
+              <p><b>Phone:</b> {selectedUser.phone || "—"}</p>
+              <p><b>Gender:</b> {selectedUser.gender || "—"}</p>
+              <p><b>DOB:</b> {selectedUser.dob || "—"}</p>
+              <p><b>Role:</b> {selectedUser.role}</p>
+              <p><b>Department:</b> {selectedUser.department}</p>
+              <p>
+                <b>Enrollment No.:</b>{" "}
+                {selectedUser.enrollmentNumber ||
+                  selectedUser.employeeId ||
+                  "—"}
+              </p>
+            </div>
+
+            <div className="mt-5">
+              <h4 className="font-semibold text-indigo-600 mb-2">
+                Verification Document
+              </h4>
+
+              {selectedUser.idDocument ? (
+                <a
+                  href={selectedUser.idDocument}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-indigo-600 underline"
+                >
+                  View / Download Document
+                </a>
+              ) : (
+                <p className="text-gray-500 text-sm">
+                  No document uploaded
+                </p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setSelectedUser(null)}
+                className="px-4 py-2 border rounded-lg"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => handleAction(selectedUser._id, "approve")}
+                className="bg-green-500 text-white px-4 py-2 rounded-lg"
+              >
+                Approve
+              </button>
+              <button
+                onClick={() => handleAction(selectedUser._id, "reject")}
+                className="bg-red-500 text-white px-4 py-2 rounded-lg"
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+    </>
   );
 };
 
