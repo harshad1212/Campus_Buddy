@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import './css/ResetPassword.css';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
 const ResetPassword = () => {
   const { token } = useParams();

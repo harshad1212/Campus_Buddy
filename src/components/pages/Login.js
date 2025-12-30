@@ -29,7 +29,7 @@ const Login = ({ setCurrentUser }) => {
     setLoading(true);
 
     try {
-      const res = await fetch("http://localhost:4000/api/login", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, role }), // ✅ Include role
@@ -52,6 +52,7 @@ const Login = ({ setCurrentUser }) => {
       });
 
       localStorage.setItem("token", data.token);
+      localStorage.setItem("userId", data.user._id);
       setCurrentUser(userData);
 
       // ✅ Role-based redirection

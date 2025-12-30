@@ -44,7 +44,7 @@ const UploadResources = () => {
     formData.append("description", description);
 
     try {
-      await axios.post("http://localhost:4000/api/resources/upload", formData, {
+      await axios.post( process.env.REACT_APP_API_URL+"/api/resources/upload", formData, {
         headers: { 
           "Content-Type": "multipart/form-data", 
           Authorization: `Bearer ${token}` 

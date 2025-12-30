@@ -20,6 +20,10 @@ import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
 import RegisterUser from './components/pages/RegisterUser';
+import ForumList from "./components/pages/forum/ForumList";
+import AskQuestion from "./components/pages/forum/AskQuestion";
+import QuestionDetail from "./components/pages/forum/QuestionDetail";
+import Leaderboard from './components/Leaderboard/Leaderboard';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -47,6 +51,11 @@ function App() {
         <Route path="/admin-events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
         <Route path="/admin-dashboard" element={<AdminDashboard setCurrentUser={setCurrentUser} />} />
+        <Route path="/forum" element={<ForumList />} />
+        <Route path="/forum/ask" element={<AskQuestion />} />
+        <Route path="/forum/:id" element={<QuestionDetail />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+
       </Routes>
     </Router>
   );

@@ -27,7 +27,7 @@ const AdminDashboard = () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:4000/api/admin/pending-requests/${universityCode}`
+        `${process.env.REACT_APP_API_URL}/api/admin/pending-requests/${universityCode}`
       );
       const data = await res.json();
 
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
           ? `/api/admin/approve-request/${id}`
           : `/api/admin/reject-request/${id}`;
 
-      const res = await fetch(`http://localhost:4000${endpoint}`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

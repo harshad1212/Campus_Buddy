@@ -1,7 +1,3 @@
-/* ==========================================================
-   USERS LIST — FULL PROFESSIONAL TELEGRAM-STYLE REDESIGN
-   ========================================================== */
-
 import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import {
@@ -14,9 +10,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ==========================================================
-   USER ROW COMPONENT (MODERN CARD)
-   ========================================================== */
 
 const UserRow = ({
   user,
@@ -157,7 +150,7 @@ const UsersList = ({
   const menuRef = useRef();
 
   const apiBase =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+    process.env.REACT_APP_API_URL || "http://localhost:4000";
 
   /* ==========================================================
      Close 3-dots menu when clicking outside

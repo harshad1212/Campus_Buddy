@@ -37,7 +37,7 @@ const ChatPage = ({ currentUser }) => {
   );
 
   const apiBase =
-    process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+    process.env.REACT_APP_API_URL || "http://localhost:4000";
 
   // Responsive listener
   useEffect(() => {

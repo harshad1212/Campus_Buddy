@@ -26,7 +26,7 @@ const formatChatDate = (dateString) => {
 };
 
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:4000";
+  process.env.REACT_APP_API_URL || "http://localhost:4000";
 
 const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], friendIds = [] }) => {
   const [messages, setMessages] = useState([]);
@@ -560,7 +560,13 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], frie
     }
   };
 
-
+  const visibleMessages = React.useMemo(() => {
+    if (!isBlocked || !chatUser?._id) return messages;
+    return messages.filter((m) => {
+      const senderId = m.sender?._id || m.sender;
+      return String(senderId) !== String(chatUser._id);
+    });
+  }, [messages, isBlocked, chatUser]);
 
   return (
     <div className="flex flex-col h-full bg-gray-50">
@@ -680,14 +686,16 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], frie
         className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent"
       >
 
+        
+
         {loading ? (
           <div className="text-center text-xs text-gray-400 py-4">Loading...</div>
-        ) : messages.length === 0 ? (
+        ) : visibleMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center text-gray-400 py-10">
             <p>No messages yet</p>
           </div>
         ) : (
-          groupMessagesByDate(messages).map(({ dateKey, messages }) => (
+          groupMessagesByDate(visibleMessages).map(({ dateKey, messages }) => (
             <div key={dateKey}>
 
               {/* DATE SEPARATOR */}

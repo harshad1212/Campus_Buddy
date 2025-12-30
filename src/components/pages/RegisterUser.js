@@ -25,7 +25,7 @@ const RegisterUser = () => {
   useEffect(() => {
     const fetchUniversities = async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/university/universities");
+        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/university/universities`);
         const data = await res.json();
         setUniversities(data);
       } catch (err) {
@@ -57,7 +57,7 @@ const RegisterUser = () => {
       }
       formDataToSend.append("role", role);
 
-      const res = await fetch("http://localhost:4000/api/register-request", {
+      const res = await fetch(`${process.env.REACT_APP_API_URL}/api/register-request`, {
         method: "POST",
         body: formDataToSend,
       });

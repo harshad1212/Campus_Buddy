@@ -36,7 +36,7 @@ const SeeResources = () => {
     }
 
     try {
-      const res = await axios.get("http://localhost:4000/api/resources", {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/resources`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { stream, semester, subject },
       });
@@ -63,7 +63,7 @@ const SeeResources = () => {
   const handleLike = async (id) => {
     try {
       const res = await axios.post(
-        `http://localhost:4000/api/resources/${id}/like`,
+        `${process.env.REACT_APP_API_URL}/api/resources/${id}/like`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -86,7 +86,7 @@ const SeeResources = () => {
 
   const handleDownload = async (id) => {
     try {
-      const res = await axios.get(`http://localhost:4000/api/resources/${id}/download`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/resources/${id}/download`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -111,7 +111,7 @@ const SeeResources = () => {
 
     try {
       const newComment = await axios.post(
-        `http://localhost:4000/api/resources/${id}/comment`,
+        `${process.env.REACT_APP_API_URL}/api/resources/${id}/comment`,
         { text: resource.commentText },
         { headers: { Authorization: `Bearer ${token}` } }
       );
