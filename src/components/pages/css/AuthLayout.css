@@ -172,7 +172,7 @@
 
 /* ---------------- BUTTONS ---------------- */
 .auth-btn {
-  background: linear-gradient(90deg, #6183d0, #2563eb);
+  background: linear-gradient(90deg, #2563eb, #6183d0);
   color: #ffffff;
   font-size: 1rem;
   font-weight: 600;

@@ -1,78 +1,122 @@
-// src/components/Events/CreateEvent.js
-import React, { useState } from "react";
-import axios from "axios";
-import "./Events.css";
-import Header from "../pages/Header";
-import Footer from "../pages/Footer";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../../api/axios"; // axios instance
 
 const CreateEvent = () => {
-  const [form, setForm] = useState({
+  const navigate = useNavigate();
+
+  const [formData, setFormData] = useState({
     title: "",
     description: "",
     date: "",
     time: "",
     venue: "",
+    category: "",
   });
-  const token = localStorage.getItem("token");
 
-  const handleChange = (e) =>
-    setForm({ ...form, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
-      await axios.post("/api/events", form, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("Event created! Awaiting admin approval.");
-      setForm({ title: "", description: "", date: "", time: "", venue: "" });
-    } catch (err) {
-      alert(err.response?.data?.error || "Error creating event");
+      await api.post("/events", formData);
+      alert("Event created successfully 🎉");
+      navigate("/events");
+    } catch (error) {
+      alert(error.response?.data?.error || "Failed to create event");
     }
   };
 
   return (
     <>
-      <Header />
-      <div className="create-event-container">
-        <h2>Create Event</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            name="title"
-            placeholder="Title"
-            value={form.title}
-            onChange={handleChange}
-            required
-          />
-          <textarea
-            name="description"
-            placeholder="Description"
-            value={form.description}
-            onChange={handleChange}
-          />
-          <input
-            name="date"
-            type="date"
-            value={form.date}
-            onChange={handleChange}
-            required
-          />
-          <input
-            name="time"
-            type="time"
-            value={form.time}
-            onChange={handleChange}
-          />
-          <input
-            name="venue"
-            placeholder="Venue"
-            value={form.venue}
-            onChange={handleChange}
-          />
-          <button type="submit">Create Event</button>
-        </form>
+      {/* 🔹 YOUR EXISTING HEADER GOES HERE */}
+      {/* <Header /> */}
+
+      <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 flex items-center justify-center p-6 font-poppins">
+        <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg p-8 border border-blue-100">
+          <h2 className="text-2xl font-semibold text-blue-700 mb-6">
+            Create Event
+          </h2>
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              name="title"
+              placeholder="Event Title"
+              value={formData.title}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+              required
+            />
+
+            <textarea
+              name="description"
+              placeholder="Event Description"
+              rows="3"
+              value={formData.description}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+              required
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <input
+                type="date"
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                className="px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+                required
+              />
+              <input
+                type="time"
+                name="time"
+                value={formData.time}
+                onChange={handleChange}
+                className="px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+                required
+              />
+            </div>
+
+            <input
+              type="text"
+              name="venue"
+              placeholder="Venue / Online Link"
+              value={formData.venue}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+              required
+            />
+
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+              required
+            >
+              <option value="">Select Category</option>
+              <option value="Workshop">Workshop</option>
+              <option value="Seminar">Seminar</option>
+              <option value="Hackathon">Hackathon</option>
+              <option value="Fest">Fest</option>
+            </select>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2.5 rounded-xl font-medium hover:bg-blue-700 transition"
+            >
+              Submit Event
+            </button>
+          </form>
+        </div>
       </div>
-      <Footer />
     </>
   );
 };
