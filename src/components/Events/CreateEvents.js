@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios"; // axios instance
+import Header from "../pages/Header";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ const CreateEvent = () => {
   return (
     <>
       {/* 🔹 YOUR EXISTING HEADER GOES HERE */}
-      {/* <Header /> */}
+      <Header/>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 flex items-center justify-center p-6 font-poppins">
         <div className="bg-white w-full max-w-xl rounded-2xl shadow-lg p-8 border border-blue-100">
@@ -74,6 +75,7 @@ const CreateEvent = () => {
                 className="px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
                 required
               />
+              
               <input
                 type="time"
                 name="time"

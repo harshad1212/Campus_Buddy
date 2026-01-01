@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { askQuestion } from "../../services/forumApi";
 import { useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
+import Header from "../Header";
 
 export default function AskQuestion() {
   const navigate = useNavigate();
@@ -59,6 +60,8 @@ export default function AskQuestion() {
   };
 
   return (
+    <>
+    <Header/>
     <div className="max-w-3xl mx-auto px-4 py-8">
       {/* Header */}
       <h2 className="text-3xl font-bold text-gray-800 mb-2">
@@ -161,5 +164,6 @@ export default function AskQuestion() {
         </button>
       </form>
     </div>
+    </>
   );
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
-
+import Header from "../pages/Header";
 const FILTERS = [
   { key: "total", label: "Overall" },
   { key: "resource", label: "Resources" },
@@ -85,10 +85,11 @@ const Leaderboard = () => {
 
   /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen bg-blue-50 px-4 sm:px-6 py-8">
+    <div>
+      <Header />
       <main className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
+        
+        <div className="text-center my-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-blue-900">
             🏆 Campus Leaderboard
           </h1>

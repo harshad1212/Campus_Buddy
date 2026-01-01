@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { Calendar, Clock, MapPin, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import api from "../../api/axios";
+import Header from "../pages/Header";
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -51,7 +52,7 @@ const EventDetails = () => {
     <>
       {/* 🔹 YOUR HEADER HERE */}
       {/* <Header /> */}
-
+      <Header />
       <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 p-6 font-poppins">
         <div className="max-w-4xl mx-auto">
           <motion.div

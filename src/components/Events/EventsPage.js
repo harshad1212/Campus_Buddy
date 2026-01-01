@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import api from "../../api/axios";
+import Header from "../pages/Header";
 
 const EventsPage = () => {
   const [events, setEvents] = useState([]);
@@ -36,7 +37,7 @@ const EventsPage = () => {
     <>
       {/* 🔹 YOUR EXISTING HEADER GOES HERE */}
       {/* <Header /> */}
-
+      <Header />
       <div className="min-h-screen bg-gradient-to-br from-blue-100 via-blue-50 to-indigo-100 p-6 font-poppins">
         <div className="max-w-7xl mx-auto">
           {/* Page Header */}

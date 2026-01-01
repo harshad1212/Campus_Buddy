@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { getQuestions } from "../../services/forumApi";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
-
+import Header from "../Header";
 /* Avatar */
 const Avatar = ({ name, src, size = 28 }) => {
   const initials = name
@@ -62,6 +62,8 @@ export default function ForumList() {
   }, [questions, search, selectedTag]);
 
   return (
+    <>
+    <Header />
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold text-gray-800">
@@ -148,5 +150,6 @@ export default function ForumList() {
         ))}
       </div>
     </div>
+    </>
   );
 }

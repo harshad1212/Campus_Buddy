@@ -9,6 +9,7 @@ import {
 } from "../../services/forumApi";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MoreVertical } from "lucide-react";
+import Header from "../Header";
 
 /* ===============================
    Avatar Component
@@ -190,6 +191,8 @@ export default function QuestionDetail() {
   if (!question) return null;
 
   return (
+    <>
+    <Header />
     <div className="max-w-4xl mx-auto px-4 py-8">
       {/* Back */}
       <button
@@ -377,5 +380,6 @@ export default function QuestionDetail() {
         </button>
       </div>
     </div>
+    </>
   );
 }
