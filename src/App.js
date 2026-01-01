@@ -25,6 +25,7 @@ import AskQuestion from "./components/pages/forum/AskQuestion";
 import QuestionDetail from "./components/pages/forum/QuestionDetail";
 import Leaderboard from './components/Leaderboard/Leaderboard';
 import EventDetails from "./components/Events/EventDetails";
+import AdminRequests from './components/admin/AdminRequests';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -58,6 +59,7 @@ function App() {
         <Route path="/forum/ask" element={<AskQuestion />} />
         <Route path="/forum/:id" element={<QuestionDetail />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/admin/requests" element={<AdminRequests />} />
 
       </Routes>
     </Router>

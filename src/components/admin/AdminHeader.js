@@ -1,5 +1,5 @@
 import React from "react";
-import { ShieldCheck, LogOut, UserCog } from "lucide-react";
+import { LogOut, UserCog } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const AdminHeader = () => {
@@ -12,38 +12,29 @@ const AdminHeader = () => {
   };
 
   return (
-    <header className="bg-indigo-700 text-white shadow-lg">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <header className="ml-64 h-16 bg-white border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-40">
+      
+      {/* Page Title */}
+      <h1 className="text-xl font-semibold text-slate-800">
+        Admin Dashboard
+      </h1>
 
-        {/* Left: Branding */}
-        <div className="flex gap-6">
-          <ShieldCheck size={28} />
-          <div>
-            <h1 className="text-xl font-bold tracking-wide">
-              Admin Panel
-            </h1>
-
-          </div>
+      {/* Right Actions */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full">
+          <UserCog size={18} className="text-indigo-600" />
+          <span className="text-sm font-medium text-slate-700">
+            {user?.name || "Admin"}
+          </span>
         </div>
 
-        {/* Right: Admin Info */}
-        <div className="flex items-center gap-6">
-          <div className="hidden sm:flex items-center gap-2">
-            <UserCog size={20} />
-            <span className="font-medium">
-              {user?.name || "Admin"}
-            </span>
-          </div>
-
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-2 bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg transition"
-          >
-            <LogOut size={18} />
-            Logout
-          </button>
-        </div>
-
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition"
+        >
+          <LogOut size={16} />
+          Logout
+        </button>
       </div>
     </header>
   );
