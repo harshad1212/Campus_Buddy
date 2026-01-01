@@ -250,37 +250,37 @@ export default function QuestionDetail() {
                   )}
 
                   <div className="flex items-center gap-4 mt-4 text-sm">
-  <button
-    onClick={() => handleVote(a._id, 1)}
-    disabled={userVote === 1}
-    className={`${
-      userVote === 1 ? "text-blue-600 font-bold" : ""
-    }`}
-  >
-    👍
-  </button>
+                  <button
+                    onClick={() => handleVote(a._id, 1)}
+                    disabled={userVote === 1}
+                    className={`${
+                      userVote === 1 ? "text-blue-600 font-bold" : ""
+                    }`}
+                  >
+                    👍
+                  </button>
 
-  <span>{a.votes}</span>
+                  <span>{a.votes}</span>
 
-  <button
-    onClick={() => handleVote(a._id, -1)}
-    disabled={userVote === -1}
-    className={`${
-      userVote === -1 ? "text-red-600 font-bold" : ""
-    }`}
-  >
-    👎
-  </button>
+                  <button
+                    onClick={() => handleVote(a._id, -1)}
+                    disabled={userVote === -1}
+                    className={`${
+                      userVote === -1 ? "text-red-600 font-bold" : ""
+                    }`}
+                  >
+                    👎
+                  </button>
 
-  {question.askedBy?._id === currentUser?._id && !a.isBestAnswer && (
-    <button
-      onClick={() => handleMarkBest(a._id)}
-      className="ml-auto text-green-600"
-    >
-      Mark Best
-    </button>
-  )}
-</div>
+                  {question.askedBy?._id === currentUser?._id && !a.isBestAnswer && (
+                    <button
+                      onClick={() => handleMarkBest(a._id)}
+                      className="ml-auto text-green-600"
+                    >
+                      Mark Best
+                    </button>
+                  )}
+                </div>
 
 
                 </div>
