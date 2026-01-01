@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios"; // axios instance
 import Header from "../pages/Header";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const CreateEvent = () => {
   const navigate = useNavigate();
@@ -67,20 +69,19 @@ const CreateEvent = () => {
             />
 
             <div className="grid grid-cols-2 gap-4">
-              <input
-                type="date"
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                className="px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
-                required
-              />
+              <DatePicker
+              selected={formData.dob}
+              onChange={(date) => setFormData({ ...formData, dob: date })}
+              placeholderText="Date of Event"
+              className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
+              />   
               
               <input
                 type="time"
                 name="time"
                 value={formData.time}
                 onChange={handleChange}
+                placeholder="time"
                 className="px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-400 outline-none"
                 required
               />

@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
 import "./css/AuthLayout.css";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const RegisterUser = () => {
   const [role, setRole] = useState("student");
@@ -175,8 +177,12 @@ const RegisterUser = () => {
                   <option>Female</option>
                 </select>
 
-                <input name="dob" type="date" value={formData.dob} onChange={handleChange} required />
-              </div>
+                <DatePicker
+                  selected={formData.dob}
+                  onChange={(date) => setFormData({ ...formData, dob: date })}
+                  placeholderText="Date of Birth"
+                />            
+                </div>
 
               <button type="button" className="auth-btn" onClick={nextStep}>Next</button>
             </>
