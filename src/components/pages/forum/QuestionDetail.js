@@ -8,7 +8,7 @@ import {
   deleteAnswer,
 } from "../../services/forumApi";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical } from "lucide-react";
+import { ArrowLeft, MoreVertical, ChevronUp, ChevronDown } from "lucide-react";
 import Header from "../Header";
 
 /* ===============================
@@ -41,6 +41,7 @@ const Avatar = ({ name, src, size = 36 }) => {
 export default function QuestionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const menuRef = useRef(null);
 
   const [question, setQuestion] = useState(null);
   const [answerText, setAnswerText] = useState("");
@@ -48,15 +49,13 @@ export default function QuestionDetail() {
   const [editedText, setEditedText] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  const menuRef = useRef(null);
-
   const currentUser = (() => {
-  try {
-    return JSON.parse(localStorage.getItem("user"));
-  } catch {
-    return null;
-  }
-})();
+    try {
+      return JSON.parse(localStorage.getItem("user"));
+    } catch {
+      return null;
+    }
+  })();
 
   const isAdmin = currentUser?.role === "admin";
 
@@ -73,23 +72,36 @@ export default function QuestionDetail() {
   }, [id]);
 
   /* ===============================
+     Close menu on outside click
+  =============================== */
+  useEffect(() => {
+    const handler = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  /* ===============================
      Helpers
   =============================== */
   const getUserVote = (answer, userId) => {
     if (!answer?.voters || !userId) return 0;
-    const voter = answer.voters.find(
-      (v) => v.userId?.toString() === userId.toString()
+    const v = answer.voters.find(
+      (x) => x.userId?.toString() === userId.toString()
     );
-    return voter ? voter.vote : 0;
+    return v ? v.vote : 0; // 1 | -1 | 0
   };
 
   /* ===============================
-     Voting (SAFE VERSION)
+     Voting (LeetCode Style)
   =============================== */
   const handleVote = async (answerId, voteValue) => {
     try {
       await voteAnswer(id, answerId, voteValue);
-      await loadQuestion(); // ✅ refetch instead of mutating
+      await loadQuestion(); // sync UI
     } catch (err) {
       console.error("Vote failed", err);
     }
@@ -99,20 +111,16 @@ export default function QuestionDetail() {
      Best Answer
   =============================== */
   const handleMarkBest = async (answerId) => {
-    try {
-      await markBestAnswer(id, answerId);
-      await loadQuestion();
-    } catch (err) {
-      console.error(err);
-    }
+    await markBestAnswer(id, answerId);
+    await loadQuestion();
   };
 
   /* ===============================
      Edit / Delete
   =============================== */
-  const startEdit = (answer) => {
-    setEditingAnswerId(answer._id);
-    setEditedText(answer.text);
+  const startEdit = (a) => {
+    setEditingAnswerId(a._id);
+    setEditedText(a.text);
     setOpenMenuId(null);
   };
 
@@ -140,6 +148,8 @@ export default function QuestionDetail() {
 
   if (!question) return null;
 
+  const isOwner = question.askedBy?._id === currentUser?._id;
+
   return (
     <>
       <Header />
@@ -161,7 +171,9 @@ export default function QuestionDetail() {
             />
             <div>
               <p className="font-medium">{question.askedBy?.name}</p>
-              <p className="text-xs text-gray-500">Asked a question</p>
+              <p className="text-xs text-gray-500">
+                {question.askedBy?.totalPoints || 0} pts
+              </p>
             </div>
           </div>
 
@@ -171,12 +183,12 @@ export default function QuestionDetail() {
 
         {/* Answers */}
         <h3 className="mt-8 text-xl font-semibold">
-          Answers ({question.answers.length})
+          {question.answers.length} Answers
         </h3>
 
         <div className="space-y-4 mt-4">
           {question.answers
-            .filter((a) => a.userId) // 🔥 CRITICAL FIX
+            .filter((a) => a.userId)
             .sort((a, b) => b.isBestAnswer - a.isBestAnswer)
             .map((a) => {
               const userVote = getUserVote(a, currentUser?._id);
@@ -186,10 +198,10 @@ export default function QuestionDetail() {
               return (
                 <div
                   key={a._id}
-                  className={`border rounded-xl p-5 ${
+                  className={`border rounded-xl p-5 border-l-4 ${
                     a.isBestAnswer
                       ? "border-green-500 bg-green-50"
-                      : "bg-white"
+                      : "border-transparent bg-white"
                   }`}
                 >
                   <div className="flex justify-between mb-3">
@@ -201,9 +213,12 @@ export default function QuestionDetail() {
                       />
                       <div>
                         <p className="font-medium">{a.userId?.name}</p>
+                        <p className="text-xs text-gray-500">
+                          {a.userId?.totalPoints || 0} pts
+                        </p>
                         {a.isBestAnswer && (
-                          <span className="text-xs text-green-600">
-                            ✓ Best Answer
+                          <span className="text-green-600 text-sm font-semibold">
+                            ✔ Accepted
                           </span>
                         )}
                       </div>
@@ -213,7 +228,9 @@ export default function QuestionDetail() {
                       <div className="relative" ref={menuRef}>
                         <button
                           onClick={() =>
-                            setOpenMenuId(openMenuId === a._id ? null : a._id)
+                            setOpenMenuId(
+                              openMenuId === a._id ? null : a._id
+                            )
                           }
                         >
                           <MoreVertical size={18} />
@@ -240,70 +257,90 @@ export default function QuestionDetail() {
                   </div>
 
                   {editingAnswerId === a._id ? (
-                    <textarea
-                      className="w-full border rounded p-2"
-                      value={editedText}
-                      onChange={(e) => setEditedText(e.target.value)}
-                    />
+                    <>
+                      <textarea
+                        className="w-full border rounded p-2"
+                        value={editedText}
+                        onChange={(e) => setEditedText(e.target.value)}
+                      />
+                      <button
+                        onClick={() => saveEdit(a._id)}
+                        className="mt-2 bg-blue-600 text-white px-4 py-1 rounded"
+                      >
+                        Save
+                      </button>
+                    </>
                   ) : (
                     <p>{a.text}</p>
                   )}
 
-                  <div className="flex items-center gap-4 mt-4 text-sm">
-                  <button
-                    onClick={() => handleVote(a._id, 1)}
-                    disabled={userVote === 1}
-                    className={`${
-                      userVote === 1 ? "text-blue-600 font-bold" : ""
-                    }`}
-                  >
-                    👍
-                  </button>
-
-                  <span>{a.votes}</span>
-
-                  <button
-                    onClick={() => handleVote(a._id, -1)}
-                    disabled={userVote === -1}
-                    className={`${
-                      userVote === -1 ? "text-red-600 font-bold" : ""
-                    }`}
-                  >
-                    👎
-                  </button>
-
-                  {question.askedBy?._id === currentUser?._id && !a.isBestAnswer && (
-                    <button
-                      onClick={() => handleMarkBest(a._id)}
-                      className="ml-auto text-green-600"
-                    >
-                      Mark Best
+                  {/* 🔥 LEETCODE-STYLE VOTING */}
+                  <div className="flex items-center gap-3 mt-4">
+                    {/* UPVOTE */}
+                    <button onClick={() => handleVote(a._id, 1)}>
+                      <ChevronUp
+                        size={22}
+                        strokeWidth={2.5}
+                        className={`transition ${
+                          userVote === 1
+                            ? "text-blue-600 fill-blue-600"
+                            : "text-gray-400 hover:text-blue-600 hover:fill-blue-600"
+                        }`}
+                      />
                     </button>
-                  )}
-                </div>
 
+                    {/* COUNT */}
+                    <span className="font-semibold min-w-[20px] text-center">
+                      {a.votes}
+                    </span>
 
+                    {/* DOWNVOTE */}
+                    <button onClick={() => handleVote(a._id, -1)}>
+                      <ChevronDown
+                        size={22}
+                        strokeWidth={2.5}
+                        className={`transition ${
+                          userVote === -1
+                            ? "text-orange-600 fill-orange-600"
+                            : "text-gray-400 hover:text-orange-600 hover:fill-orange-600"
+                        }`}
+                      />
+                    </button>
+
+                    {/* ACCEPT */}
+                    {question.askedBy?._id === currentUser?._id &&
+                      !a.isBestAnswer && (
+                        <button
+                          onClick={() => handleMarkBest(a._id)}
+                          className="ml-auto text-green-600"
+                        >
+                          Mark Accepted
+                        </button>
+                      )}
+                  </div>
                 </div>
               );
             })}
         </div>
 
         {/* Post Answer */}
-        <div className="mt-8 bg-white border rounded-xl p-5">
-          <textarea
-            className="w-full border rounded px-4 py-2"
-            rows={4}
-            placeholder="Write your answer..."
-            value={answerText}
-            onChange={(e) => setAnswerText(e.target.value)}
-          />
-          <button
-            onClick={submitAnswer}
-            className="mt-3 bg-blue-600 text-white px-6 py-2 rounded"
-          >
-            Post Answer
-          </button>
-        </div>
+        {!isOwner && (
+          <div className="mt-8 bg-white border rounded-xl p-5">
+            <textarea
+              className="w-full border rounded px-4 py-2"
+              rows={4}
+              placeholder="Write your answer..."
+              value={answerText}
+              onChange={(e) => setAnswerText(e.target.value)}
+            />
+            <button
+              onClick={submitAnswer}
+              className="mt-3 bg-blue-600 text-white px-6 py-2 rounded"
+            >
+              Post Answer
+            </button>
+          </div>
+        )}
       </div>
     </>
   );
