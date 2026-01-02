@@ -52,7 +52,8 @@ const Login = ({ setCurrentUser }) => {
       });
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user)); // ✅ THIS LINE FIXES EVERYTHING
+      console.log("User data", data);
+      localStorage.setItem("user", JSON.stringify(data.user._id )); // ✅ THIS LINE FIXES EVERYTHING
 
       setCurrentUser(userData);
 

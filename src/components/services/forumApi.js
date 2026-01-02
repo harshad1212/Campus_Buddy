@@ -21,7 +21,6 @@ export const markBestAnswer = (qId, aId) =>
   API.post(`/best-answer/${qId}/${aId}`);
 export const editAnswer = (questionId, answerId, text) =>
   API.put(`/answer/${questionId}/${answerId}`, { text });
-
 export const deleteAnswer = (questionId, answerId) =>
   API.delete(`/answer/${questionId}/${answerId}`);
 
