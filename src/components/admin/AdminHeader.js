@@ -15,7 +15,7 @@ const AdminHeader = () => {
     <header className="ml-64 h-16 bg-white border-b shadow-sm flex items-center justify-between px-6 sticky top-0 z-40">
       
       {/* Page Title */}
-      <h1 className="text-xl font-semibold text-slate-800">
+      <h1 className="text-xl font-semibold text-slate-800 pt-6">
         Admin Dashboard
       </h1>
 

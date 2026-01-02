@@ -26,6 +26,9 @@ import QuestionDetail from "./components/pages/forum/QuestionDetail";
 import Leaderboard from './components/Leaderboard/Leaderboard';
 import EventDetails from "./components/Events/EventDetails";
 import AdminRequests from './components/admin/AdminRequests';
+import AdminUsers from './components/admin/AdminUsers';
+import AdminDepartments from './components/admin/AdminDepartments';
+import AdminDepartmentStudents from './components/admin/AdminDepartmentStudents';
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -60,7 +63,9 @@ function App() {
         <Route path="/forum/:id" element={<QuestionDetail />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/admin/requests" element={<AdminRequests />} />
-
+        <Route path="/admin/users" element={<AdminUsers />} />
+        <Route path="/admin/departments" element={<AdminDepartments />} />
+        <Route path="/admin/departments/:department/students" element={<AdminDepartmentStudents />} />
       </Routes>
     </Router>
   );
