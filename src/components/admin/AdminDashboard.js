@@ -15,14 +15,18 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState("");
   const [selectedUser, setSelectedUser] = useState(null);
   const [activeView, setActiveView] = useState("dashboard"); 
+  const [events, setEvents] = useState([]);
+  
   // dashboard | pending
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const universityCode = currentUser?.universityCode;
 
   useEffect(() => {
-    fetchRequests();
+  fetchRequests();
+  fetchPendingEvents();
   }, []);
+
 
   const fetchRequests = async () => {
     setLoading(true);
@@ -38,6 +42,22 @@ const AdminDashboard = () => {
       setLoading(false);
     }
   };
+  const fetchPendingEvents = async () => {
+  try {
+    const res = await fetch(
+      `${process.env.REACT_APP_API_URL}/api/admin/events/pending`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    const data = await res.json();
+    setEvents(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Failed to fetch pending events");
+  }
+};
 
   const handleAction = async (id, action) => {
     await fetch(
@@ -60,13 +80,26 @@ const AdminDashboard = () => {
     <>
       <AdminSidebar
         pendingCount={requests.length}
-        onPendingClick={() => setActiveView("pending")}
-      />
+        onPendingClick={() => setActiveView("pending")}  
+        pendingEventsCount={events.length}
+        />
       <AdminHeader />
 
       <main className="ml-64 p-6 bg-slate-100 min-h-screen">
+        {/* ================= DEFAULT DASHBOARD VIEW ================= */}
+        {activeView === "dashboard" && (
+          <div className="bg-white p-8 rounded-xl shadow text-center">
+            <h2 className="text-2xl font-bold text-indigo-700 mb-2">
+              Welcome Admin 👋
+            </h2>
+            <p className="text-gray-600">
+              Manage user registrations, verify documents, and monitor campus
+              activity from here.
+            </p>
+          </div>
+        )}
         {/* ================= DASHBOARD CARDS ================= */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 my-6">
           <div
             onClick={() => setActiveView("pending")}
             className="bg-white rounded-xl shadow p-5 cursor-pointer hover:scale-[1.02] transition"
@@ -87,19 +120,14 @@ const AdminDashboard = () => {
             <h2 className="text-3xl font-bold text-red-500">—</h2>
           </div>
         </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
+          <StatCard label="Pending Events" value={events.length} color="indigo" />
+          <StatCard label="Approved Events" value="—" color="green" />
+          <StatCard label="Rejected Events" value="—" color="red" />
+        </div>
+        
 
-        {/* ================= DEFAULT DASHBOARD VIEW ================= */}
-        {activeView === "dashboard" && (
-          <div className="bg-white p-8 rounded-xl shadow text-center">
-            <h2 className="text-2xl font-bold text-indigo-700 mb-2">
-              Welcome Admin 👋
-            </h2>
-            <p className="text-gray-600">
-              Manage user registrations, verify documents, and monitor campus
-              activity from here.
-            </p>
-          </div>
-        )}
+        
 
         {/* ================= PENDING REQUESTS VIEW ================= */}
         {activeView === "pending" && (
@@ -277,3 +305,11 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
+const StatCard = ({ label, value, color }) => (
+  <div className="bg-white rounded-xl shadow p-5">
+    <p className="text-sm text-slate-500">{label}</p>
+    <h2 className={`text-3xl font-bold text-${color}-600`}>
+      {value}
+    </h2>
+  </div>
+);

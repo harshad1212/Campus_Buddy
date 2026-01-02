@@ -52,7 +52,8 @@ const Login = ({ setCurrentUser }) => {
       });
 
       localStorage.setItem("token", data.token);
-      localStorage.setItem("userId", data.user._id);
+      localStorage.setItem("user", JSON.stringify(data.user)); // ✅ THIS LINE FIXES EVERYTHING
+
       setCurrentUser(userData);
 
       // ✅ Role-based redirection

@@ -123,7 +123,7 @@ h1 {
 }
 
 .upload-form button:hover {
-  background: linear-gradient(90deg, #38f9d7, #43e97b);
+  background: linear-gradient(90deg,  #37c5ec, #3fd0f4);
   transform: scale(1.03);
 }
 
@@ -209,7 +209,7 @@ h1 {
 }
 
 .form-actions button:hover {
-  background: linear-gradient(90deg, #38f9d7, #43e97b);
+  background: linear-gradient(90deg, #37c5ec, #3fd0f4);
 }
 
 /* --- Resource Grid --- */
@@ -349,7 +349,7 @@ h1 {
 }
 
 .resources-page .see-container .view-btn:hover {
-  background: linear-gradient(90deg, #38f9d7, #43e97b);
+  background: linear-gradient(90deg,  #37c5ec, #3fd0f4);
   transform: scale(1.05);
   box-shadow: 0 6px 14px rgba(67, 233, 123, 0.35);
 }

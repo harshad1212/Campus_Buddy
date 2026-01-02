@@ -7,6 +7,9 @@ import { Award } from "lucide-react";
 const AdminDepartmentStudents = () => {
   const { department } = useParams();
   const [students, setStudents] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const universityCode = currentUser?.universityCode;
@@ -21,11 +24,47 @@ const AdminDepartmentStudents = () => {
 
   useEffect(() => {
     fetchStudents();
+    fetchRequests();
+    fetchPendingEvents();
   }, [department]);
 
+  
+  
+    const fetchRequests = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/admin/pending-requests/${universityCode}`
+        );
+        const data = await res.json();
+        setRequests(data || []);
+      } catch {
+        console.error("Failed to fetch requests");
+      } finally {
+        setLoading(false);
+      }
+    };
+    const fetchPendingEvents = async () => {
+    try {
+      const res = await fetch(
+        `${process.env.REACT_APP_API_URL}/api/admin/events/pending`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      const data = await res.json();
+      setEvents(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error("Failed to fetch pending events");
+    }
+  };
   return (
     <>
-      <AdminSidebar pendingCount={0} />
+      <AdminSidebar 
+        pendingCount={requests.length}
+        pendingEventsCount={events.length} />
       <AdminHeader />
 
       <main className="ml-64 p-6 bg-slate-100 min-h-screen">

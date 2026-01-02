@@ -29,6 +29,8 @@ import AdminRequests from './components/admin/AdminRequests';
 import AdminUsers from './components/admin/AdminUsers';
 import AdminDepartments from './components/admin/AdminDepartments';
 import AdminDepartmentStudents from './components/admin/AdminDepartmentStudents';
+import AdminEventApprovals from "./components/admin/AdminEventApprovals";
+
 
 function App() {
   // For demo purposes, store logged-in user here
@@ -55,7 +57,6 @@ function App() {
         <Route path="/create-events" element={<CreateEvent />} />
         <Route path="/event-details" element={<EventDetails /> } />
         <Route path="/events/:id" element={<EventDetails />} />
-        <Route path="/admin/events" element={<AdminEvents />} />
         <Route path="/register-university" element={<RegisterUniversity />} />
         <Route path="/admin-dashboard" element={<AdminDashboard setCurrentUser={setCurrentUser} />} />
         <Route path="/forum" element={<ForumList />} />
@@ -66,6 +67,8 @@ function App() {
         <Route path="/admin/users" element={<AdminUsers />} />
         <Route path="/admin/departments" element={<AdminDepartments />} />
         <Route path="/admin/departments/:department/students" element={<AdminDepartmentStudents />} />
+        <Route path="/admin/events" element={<AdminEventApprovals />} />
+
       </Routes>
     </Router>
   );

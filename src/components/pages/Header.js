@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Cookies from "js-cookie";
 
 const Header = ({ setCurrentUser }) => {
+  const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showResourcesDropdown, setShowResourcesDropdown] = useState(false);
@@ -11,6 +12,9 @@ const Header = ({ setCurrentUser }) => {
   const handleLogout = () => {
     Cookies.remove("chatUser");
     localStorage.removeItem("token");
+
+    localStorage.removeItem("user"); // ✅
+
     if (setCurrentUser) setCurrentUser(null);
     navigate("/login", { replace: true });
     alert("Logged out successfully!");
@@ -48,29 +52,48 @@ const Header = ({ setCurrentUser }) => {
             </div>
 
             {/* ✅ Events Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setShowEventsDropdown(true)}
-              onMouseLeave={() => setShowEventsDropdown(false)}
-            >
-              <Link to="#" className="hover:text-gray-200 transition">Events ▾</Link>
-              {showEventsDropdown && (
-                <div className="absolute left-0 mt-0 w-48 bg-white text-blue-600 rounded-lg shadow-lg">
-                  <Link
-                    to="/events"
-                    className="block px-4 py-2 hover:bg-blue-100"
-                  >
-                    View Events
-                  </Link>
-                  <Link
-                    to="/create-events"
-                    className="block px-4 py-2 hover:bg-blue-100"
-                  >
-                    Create Event
-                  </Link>
-                </div>
-              )}
-            </div>
+            {/* ✅ Events Navigation */}
+        
+            {user?.role === "teacher" ? (
+              // 👩‍🏫 Teacher → Dropdown
+              <div
+                className="relative"
+                onMouseEnter={() => setShowEventsDropdown(true)}
+                onMouseLeave={() => setShowEventsDropdown(false)}
+              >
+                <Link
+                  to="/events"
+                  className="hover:text-gray-200 transition cursor-pointer"
+                >
+                  Events ▾
+                </Link>
+
+                {showEventsDropdown && (
+                  <div className="absolute left-0 top-full w-48 bg-white text-blue-600 rounded-lg shadow-lg z-50">
+                    <Link
+                      to="/events"
+                      className="block px-4 py-2 hover:bg-blue-100"
+                    >
+                      View Events
+                    </Link>
+
+                    <Link
+                      to="/create-events"
+                      className="block px-4 py-2 hover:bg-blue-100"
+                    >
+                      Create Event
+                    </Link>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // 👩‍🎓 Student → Simple link
+              <Link to="/events" className="hover:text-gray-200 transition">
+                Events
+              </Link>
+            )}
+
+
 
             <Link to="/chat" className="hover:text-gray-200 transition">Chat</Link>
             <Link to="/study-groups" className="hover:text-gray-200 transition">Study Groups</Link>
@@ -139,11 +162,30 @@ const Header = ({ setCurrentUser }) => {
           </div>
 
           {/* ✅ Events (mobile) */}
+          {/* ✅ Events (mobile) */}
           <div className="space-y-1">
             <span className="block text-white font-medium">Events</span>
-            <Link onClick={() => setMenuOpen(false)} to="/events" className="block pl-4 text-gray-100 hover:text-gray-200 transition">View Events</Link>
-            <Link onClick={() => setMenuOpen(false)} to="/create-events" className="block pl-4 text-gray-100 hover:text-gray-200 transition">Create Event</Link>
+
+            <Link
+              onClick={() => setMenuOpen(false)}
+              to="/events"
+              className="block pl-4 text-gray-100 hover:text-gray-200 transition"
+            >
+              View Events
+            </Link>
+
+            {user?.role === "teacher" && (
+              <Link
+                onClick={() => setMenuOpen(false)}
+                to="/create-events"
+                className="block pl-4 text-gray-100 hover:text-gray-200 transition"
+              >
+                Create Event
+              </Link>
+            )}
           </div>
+
+
 
           <Link onClick={() => setMenuOpen(false)} to="/chat" className="block hover:text-gray-200 transition">Chat</Link>
           <Link onClick={() => setMenuOpen(false)} to="/study-groups" className="block hover:text-gray-200 transition">Study Groups</Link>

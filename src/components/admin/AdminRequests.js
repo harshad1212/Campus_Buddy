@@ -8,15 +8,17 @@ import AdminHeader from "./AdminHeader";
 import AdminSidebar from "./AdminSidebar";
 const AdminRequests = () => {
   const [requests, setRequests] = useState([]);
-    const [loading, setLoading] = useState(false);
-    const [search, setSearch] = useState("");
-    const [selectedUser, setSelectedUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [search, setSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null);
   
     const currentUser = JSON.parse(localStorage.getItem("user"));
     const universityCode = currentUser?.universityCode;
   
     useEffect(() => {
       fetchRequests();
+      fetchPendingEvents();
     }, []);
   
     const fetchRequests = async () => {
@@ -31,6 +33,22 @@ const AdminRequests = () => {
         console.error("Failed to fetch requests");
       } finally {
         setLoading(false);
+      }
+    };
+    const fetchPendingEvents = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/admin/events/pending`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const data = await res.json();
+        setEvents(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error("Failed to fetch pending events");
       }
     };
   
@@ -54,7 +72,9 @@ const AdminRequests = () => {
 
   return (
     <div>
-      <AdminSidebar pendingCount={requests.length} />
+      <AdminSidebar 
+        pendingCount={requests.length}
+        pendingEventsCount={events.length} />
       <AdminHeader />
       <main className="ml-64 p-6 bg-slate-100 min-h-screen">
               {/* Search + Refresh */}

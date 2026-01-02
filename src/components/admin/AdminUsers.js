@@ -8,7 +8,10 @@ const AdminUsers = () => {
   const [departments, setDepartments] = useState([]);
   const [search, setSearch] = useState("");
   const [selectedDept, setSelectedDept] = useState("ALL");
-
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [events, setEvents] = useState([]);
+ 
   const currentUser = JSON.parse(localStorage.getItem("user"));
   const universityCode = currentUser?.universityCode;
 
@@ -33,37 +36,70 @@ const AdminUsers = () => {
   useEffect(() => {
     fetchUsers();
     fetchDepartments();
+    fetchRequests();
+    fetchPendingEvents();
   }, []);
-
+        const fetchRequests = async () => {
+            setLoading(true);
+            try {
+                const res = await fetch(
+                `${process.env.REACT_APP_API_URL}/api/admin/pending-requests/${universityCode}`
+                );
+                const data = await res.json();
+                setRequests(data || []);
+            } catch {
+                console.error("Failed to fetch requests");
+            } finally {
+                setLoading(false);
+            }
+            };
+            const fetchPendingEvents = async () => {
+            try {
+                const res = await fetch(
+                `${process.env.REACT_APP_API_URL}/api/admin/events/pending`,
+                {
+                    headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    },
+                }
+                );
+                const data = await res.json();
+                setEvents(Array.isArray(data) ? data : []);
+            } catch (err) {
+                console.error("Failed to fetch pending events");
+            }
+            };
   /* ================= DELETE USER ================= */
-  const deleteUser = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
-    await fetch(
-      `${process.env.REACT_APP_API_URL}/api/admin/user/${id}`,
-      { method: "DELETE" }
-    );
-    fetchUsers();
-  };
+        const deleteUser = async (id) => {
+            if (!window.confirm("Delete this user?")) return;
+            await fetch(
+            `${process.env.REACT_APP_API_URL}/api/admin/user/${id}`,
+            { method: "DELETE" }
+            );
+            fetchUsers();
+        };
 
   /* ================= FILTER LOGIC ================= */
-  const filteredUsers = users.filter((u) => {
-    const query = search.toLowerCase();
+        const filteredUsers = users.filter((u) => {
+            const query = search.toLowerCase();
 
-    const matchesSearch =
-      u.name.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query) ||
-      u.enrollmentNumber?.toLowerCase().includes(query) ||
-      u.employeeId?.toLowerCase().includes(query);
+            const matchesSearch =
+            u.name.toLowerCase().includes(query) ||
+            u.email.toLowerCase().includes(query) ||
+            u.enrollmentNumber?.toLowerCase().includes(query) ||
+            u.employeeId?.toLowerCase().includes(query);
 
-    const matchesDept =
-      selectedDept === "ALL" || u.department === selectedDept;
+            const matchesDept =
+            selectedDept === "ALL" || u.department === selectedDept;
 
-    return matchesSearch && matchesDept;
-  });
+            return matchesSearch && matchesDept;
+        });
 
   return (
     <>
-      <AdminSidebar pendingCount={0} />
+      <AdminSidebar 
+        pendingCount={requests.length}
+        pendingEventsCount={events.length} />
       <AdminHeader />
 
       <main className="ml-64 p-6 bg-slate-100 min-h-screen">
