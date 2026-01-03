@@ -141,31 +141,28 @@ const EventCard = ({ event, user, onApprove, onReject }) => {
 
       <div className="mt-4 text-sm text-gray-600 space-y-2">
         <div>
-          📅 {new Date(event.date).toLocaleDateString()} • ⏰{" "}
-          {event.time}
+          📅 {new Date(event.date).toLocaleDateString()} • ⏰ {event.time}
         </div>
         <div>📍 {event.venue}</div>
         <div>
-          👨‍🏫 Organizers:{" "}
-          {event.organizers?.map((o) => o.name).join(", ")}
+          👨‍🏫 Organizers: {event.organizers?.map((o) => o.name).join(", ")}
         </div>
         <div>📧 {event.contactEmail}</div>
-        {event.registrationLink && (
-          <div>
-            🔗 Registration:{" "}
-            <a
-              href={event.registrationLink}
-              target="_blank"
-              rel="noreferrer"
-              className="text-blue-600 underline"
-            >
-              Click Here
-            </a>
-          </div>
-        )}
       </div>
 
-      {/* ADMIN ACTIONS */}
+      {/* ================= REGISTER BUTTON ================= */}
+      {event.registrationLink && (
+        <a
+          href={event.registrationLink}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-block text-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+        >
+          Register
+        </a>
+      )}
+
+      {/* ================= ADMIN ACTIONS ================= */}
       {user?.role === "admin" && event.status === "pending" && (
         <div className="flex gap-3 mt-auto pt-5">
           <button
