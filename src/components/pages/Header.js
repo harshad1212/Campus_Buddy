@@ -96,7 +96,7 @@ const Header = ({ setCurrentUser }) => {
 
 
             <Link to="/chat" className="hover:text-gray-200 transition">Chat</Link>
-            <Link to="/study-groups" className="hover:text-gray-200 transition">Study Groups</Link>
+            {/* <Link to="/study-groups" className="hover:text-gray-200 transition">Study Groups</Link> */}
             <Link to="/forum" className="hover:text-gray-200 transition">Forum</Link>
             <Link to="/leaderboard" className="hover:text-gray-200 transition">Leaderboard</Link>
 

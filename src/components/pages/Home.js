@@ -26,13 +26,13 @@ const Home = () => {
       img: "https://cdn-icons-png.flaticon.com/512/2462/2462719.png",
       link: "/chat",
     },
-    {
-      title: "Study Groups",
-      description:
-        "Create or join study groups for collaborative learning and discussions.",
-      img: "https://cdn-icons-png.flaticon.com/512/1828/1828939.png",
-      link: "/study-groups",
-    },
+    // {
+    //   title: "Study Groups",
+    //   description:
+    //     "Create or join study groups for collaborative learning and discussions.",
+    //   img: "https://cdn-icons-png.flaticon.com/512/1828/1828939.png",
+    //   link: "/study-groups",
+    // },
     {
       title: "Forum",
       description:
