@@ -109,25 +109,20 @@ const AdminDashboard = () => {
               {requests.length}
             </h2>
           </div>
-
-          <div className="bg-white rounded-xl shadow p-5">
-            <p className="text-sm text-slate-500">Approved Users</p>
-            <h2 className="text-3xl font-bold text-green-600">—</h2>
+          <div
+            onClick={() => setActiveView("pending")}
+            className="bg-white rounded-xl shadow p-5 cursor-pointer hover:scale-[1.02] transition"
+          >
+            <p className="text-sm text-slate-500">Pending Events</p>
+            <h2 className="text-3xl font-bold text-indigo-600">
+              {events.length}
+            </h2>
           </div>
 
-          <div className="bg-white rounded-xl shadow p-5">
-            <p className="text-sm text-slate-500">Rejected Requests</p>
-            <h2 className="text-3xl font-bold text-red-500">—</h2>
-          </div>
+          
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-6">
-          <StatCard label="Pending Events" value={events.length} color="indigo" />
-          <StatCard label="Approved Events" value="—" color="green" />
-          <StatCard label="Rejected Events" value="—" color="red" />
-        </div>
-        
-
-        
+    
+          
 
         {/* ================= PENDING REQUESTS VIEW ================= */}
         {activeView === "pending" && (
@@ -305,11 +300,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-const StatCard = ({ label, value, color }) => (
-  <div className="bg-white rounded-xl shadow p-5">
-    <p className="text-sm text-slate-500">{label}</p>
-    <h2 className={`text-3xl font-bold text-${color}-600`}>
-      {value}
-    </h2>
-  </div>
-);
