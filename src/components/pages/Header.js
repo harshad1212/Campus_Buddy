@@ -52,8 +52,8 @@ const Header = ({ setCurrentUser }) => {
             </div>
 
             {/* ✅ Events Dropdown */}
-            {/* ✅ Events Navigation */}
         
+            {/* ✅ Events Navigation */}
             {user?.role === "teacher" ? (
               // 👩‍🏫 Teacher → Dropdown
               <div
@@ -92,6 +92,7 @@ const Header = ({ setCurrentUser }) => {
                 Events
               </Link>
             )}
+
 
 
 
