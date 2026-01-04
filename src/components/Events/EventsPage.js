@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from "react";
 import Header from "../pages/Header";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  Mail,
+} from "lucide-react";
+
+/* ================= EVENTS PAGE ================= */
 
 const EventsPage = () => {
   const user = JSON.parse(localStorage.getItem("user"));
@@ -19,9 +28,7 @@ const EventsPage = () => {
       const res = await fetch(
         `${process.env.REACT_APP_API_URL}/api/events`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       const data = await res.json();
@@ -62,13 +69,14 @@ const EventsPage = () => {
 
   /* ================= UI ================= */
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
       <Header />
 
-      <div className="max-w-7xl mx-auto my-10 px-4">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-semibold text-[#1b3b5f]">
-            University Events
+      <main className="max-w-7xl mx-auto px-6 py-14">
+        {/* HEADER */}
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-10">
+          <h1 className="text-4xl font-bold text-white">
+            University <span className="text-indigo-400">Events</span>
           </h1>
 
           <input
@@ -76,18 +84,29 @@ const EventsPage = () => {
             placeholder="Search events..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border rounded-lg px-4 py-2 w-64 focus:ring-2 focus:ring-blue-300"
+            className="
+              bg-white/10 backdrop-blur-xl
+              border border-white/20
+              rounded-xl
+              px-4 py-2
+              text-white
+              placeholder-slate-400
+              focus:outline-none focus:ring-2 focus:ring-indigo-400
+            "
           />
         </div>
 
+        {/* CONTENT */}
         {loading ? (
-          <div className="text-center text-gray-500">Loading events...</div>
-        ) : filteredEvents.length === 0 ? (
-          <div className="text-center text-gray-400">
-            No events found
+          /* ===== SKELETON LOADER ===== */
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <EventCardSkeleton key={i} />
+            ))}
           </div>
+        ) : filteredEvents.length === 0 ? (
+          <p className="text-center text-slate-400">No events found</p>
         ) : (
-          /* 🔥 GRID LAYOUT FIX */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEvents.map((e) => (
               <EventCard
@@ -100,8 +119,8 @@ const EventsPage = () => {
             ))}
           </div>
         )}
-      </div>
-    </>
+      </main>
+    </div>
   );
 };
 
@@ -110,75 +129,145 @@ export default EventsPage;
 /* ================= EVENT CARD ================= */
 
 const EventCard = ({ event, user, onApprove, onReject }) => {
-  const statusColor = {
-    pending: "bg-yellow-100 text-yellow-800",
-    approved: "bg-green-100 text-green-800",
-    rejected: "bg-red-100 text-red-800",
+  const statusStyle = {
+    pending: "bg-yellow-500/10 text-yellow-400",
+    approved: "bg-green-500/10 text-green-400",
+    rejected: "bg-red-500/10 text-red-400",
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md p-6 border h-full flex flex-col">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-lg font-semibold text-[#1b3b5f]">
-            {event.title}
-          </h2>
-          <p className="text-gray-500 text-sm mt-1">
-            {event.eventType} • {event.mode} • {event.department}
-          </p>
-        </div>
-
+    <div className="
+      bg-white/10 backdrop-blur-xl
+      border border-white/10
+      rounded-3xl
+      p-6
+      flex flex-col
+      h-full
+    ">
+      {/* HEADER */}
+      <div className="flex justify-between items-start mb-3">
+        <h2 className="text-lg font-semibold text-white leading-snug">
+          {event.title}
+        </h2>
         <span
-          className={`px-3 py-1 rounded-full text-xs font-medium ${statusColor[event.status]}`}
+          className={`px-3 py-1 rounded-full text-xs font-medium capitalize ${statusStyle[event.status]}`}
         >
           {event.status}
         </span>
       </div>
 
-      <p className="mt-3 text-gray-700 text-sm line-clamp-3">
+      {/* META */}
+      <p className="text-sm text-slate-400 mb-3">
+        {event.eventType} • {event.mode} • {event.department}
+      </p>
+
+      {/* DESCRIPTION */}
+      <p className="text-sm text-slate-300 line-clamp-2 mb-4">
         {event.description}
       </p>
 
-      <div className="mt-4 text-sm text-gray-600 space-y-2">
-        <div>
-          📅 {new Date(event.date).toLocaleDateString()} • ⏰ {event.time}
+      {/* DETAILS */}
+      <div className="space-y-2 text-sm text-slate-300 mb-6">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-indigo-400" />
+          <span>{new Date(event.date).toLocaleDateString()}</span>
+          <Clock className="w-4 h-4 text-indigo-400 ml-3" />
+          <span>{event.time}</span>
         </div>
-        <div>📍 {event.venue}</div>
-        <div>
-          👨‍🏫 Organizers: {event.organizers?.map((o) => o.name).join(", ")}
+
+        <div className="flex items-center gap-2">
+          <MapPin className="w-4 h-4 text-indigo-400" />
+          <span>{event.venue}</span>
         </div>
-        <div>📧 {event.contactEmail}</div>
+
+        <div className="flex items-center gap-2">
+          <User className="w-4 h-4 text-indigo-400" />
+          <span>{event.organizers?.map((o) => o.name).join(", ")}</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Mail className="w-4 h-4 text-indigo-400" />
+          <span>{event.contactEmail}</span>
+        </div>
       </div>
 
-      {/* ================= REGISTER BUTTON ================= */}
+      {/* REGISTER */}
       {event.registrationLink && (
         <a
           href={event.registrationLink}
           target="_blank"
           rel="noreferrer"
-          className="mt-4 inline-block text-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+          className="
+            mt-auto
+            text-center
+            py-2.5
+            rounded-xl
+            bg-indigo-600
+            text-white
+            font-medium
+            hover:bg-indigo-500
+            transition
+          "
         >
           Register
         </a>
       )}
 
-      {/* ================= ADMIN ACTIONS ================= */}
+      {/* ADMIN ACTIONS */}
       {user?.role === "admin" && event.status === "pending" && (
-        <div className="flex gap-3 mt-auto pt-5">
+        <div className="flex gap-3 mt-4">
           <button
             onClick={onApprove}
-            className="flex-1 px-3 py-2 rounded-lg bg-green-500 text-white hover:bg-green-600 transition"
+            className="flex-1 py-2 rounded-xl bg-green-600 hover:bg-green-500 transition"
           >
             Approve
           </button>
           <button
             onClick={onReject}
-            className="flex-1 px-3 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition"
+            className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-500 transition"
           >
             Reject
           </button>
         </div>
       )}
+    </div>
+  );
+};
+
+/* ================= SKELETON CARD ================= */
+
+const EventCardSkeleton = () => {
+  return (
+    <div
+      className="
+        bg-white/10 backdrop-blur-xl
+        border border-white/10
+        rounded-3xl
+        p-6
+        animate-pulse
+        h-full
+      "
+    >
+      <div className="flex justify-between mb-4">
+        <div className="h-5 w-2/3 bg-white/20 rounded" />
+        <div className="h-5 w-16 bg-white/20 rounded-full" />
+      </div>
+
+      <div className="h-4 w-3/4 bg-white/20 rounded mb-4" />
+
+      <div className="space-y-2 mb-6">
+        <div className="h-4 w-full bg-white/20 rounded" />
+        <div className="h-4 w-5/6 bg-white/20 rounded" />
+      </div>
+
+      <div className="space-y-3 mb-8">
+        <div className="h-4 w-2/3 bg-white/20 rounded" />
+        <div className="h-4 w-1/2 bg-white/20 rounded" />
+        <div className="h-4 w-3/4 bg-white/20 rounded" />
+        <div className="h-4 w-2/3 bg-white/20 rounded" />
+      </div>
+
+      <div className="h-11 w-full bg-white/20 rounded-xl mt-auto" />
     </div>
   );
 };

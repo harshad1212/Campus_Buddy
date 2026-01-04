@@ -2,15 +2,21 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import Header from "./Header";
 import Footer from "./Footer";
-import "./css/Resources.css";
 import { streamsList, semestersList, resourcesData } from "../../utils/academicData";
-import { FaHeart } from "react-icons/fa";
+import {
+  FaHeart,
+  FaDownload,
+  FaCommentDots,
+  FaSearch,
+  FaChevronDown,
+} from "react-icons/fa";
 
 const SeeResources = () => {
   const [stream, setStream] = useState(streamsList[0]);
   const [semester, setSemester] = useState(1);
   const [subject, setSubject] = useState(resourcesData[streamsList[0]][1][0]);
   const [resources, setResources] = useState([]);
+
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
 
@@ -22,114 +28,90 @@ const SeeResources = () => {
   const getUserIdFromToken = () => {
     try {
       const base64Url = token.split(".")[1];
-      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      return JSON.parse(window.atob(base64)).id;
+      return JSON.parse(atob(base64Url)).id;
     } catch {
       return null;
     }
   };
 
   const fetchResources = async () => {
-    if (!token) {
-      alert("You must be logged in to view resources!");
-      return;
-    }
+    if (!token) return alert("Login required");
 
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/resources`, {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_URL}/api/resources`,
+      {
         headers: { Authorization: `Bearer ${token}` },
         params: { stream, semester, subject },
-      });
+      }
+    );
 
-      const resourcesWithFlags = res.data.map((r) => ({
+    setResources(
+      res.data.map((r) => ({
         ...r,
         liked: r.likes?.includes(getUserIdFromToken()),
         commentText: "",
         showComments: false,
-      }));
-
-      setResources(resourcesWithFlags);
-    } catch (err) {
-      console.error("Fetch error:", err);
-      alert("Failed to fetch resources!");
-    }
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchResources();
+      }))
+    );
   };
 
   const handleLike = async (id) => {
-    try {
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/resources/${id}/like`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/resources/${id}/like`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setResources((prev) =>
-        prev.map((r) =>
-          r._id === id
-            ? {
-                ...r,
-                liked: res.data.liked,
-                likes: Array(res.data.likesCount).fill("x"),
-              }
-            : r
-        )
-      );
-    } catch (err) {
-      console.error("Like error:", err);
-    }
+    setResources((prev) =>
+      prev.map((r) =>
+        r._id === id
+          ? {
+              ...r,
+              liked: res.data.liked,
+              likes: Array(res.data.likesCount).fill("x"),
+            }
+          : r
+      )
+    );
   };
 
   const handleDownload = async (id) => {
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/resources/${id}/download`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_URL}/api/resources/${id}/download`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      window.open(res.data.fileUrl, "_blank");
+    window.open(res.data.fileUrl, "_blank");
 
-      // Update count in UI
-      setResources((prev) =>
-        prev.map((r) =>
-          r._id === id ? { ...r, downloadCount: res.data.downloadCount } : r
-        )
-      );
-    } catch (err) {
-      console.error("Download error:", err);
-      alert("Failed to download the file!");
-    }
+    setResources((prev) =>
+      prev.map((r) =>
+        r._id === id ? { ...r, downloadCount: res.data.downloadCount } : r
+      )
+    );
   };
 
   const handleCommentSubmit = async (e, id) => {
     e.preventDefault();
     const resource = resources.find((r) => r._id === id);
-    if (!resource?.commentText) return;
+    if (!resource.commentText) return;
 
-    try {
-      const newComment = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/resources/${id}/comment`,
-        { text: resource.commentText },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_URL}/api/resources/${id}/comment`,
+      { text: resource.commentText },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setResources((prev) =>
-        prev.map((r) =>
-          r._id === id
-            ? {
-                ...r,
-                comments: [...(r.comments || []), newComment.data],
-                commentText: "",
-              }
-            : r
-        )
-      );
-    } catch (err) {
-      console.error("Comment error:", err);
-    }
+    setResources((prev) =>
+      prev.map((r) =>
+        r._id === id
+          ? {
+              ...r,
+              comments: [...(r.comments || []), res.data],
+              commentText: "",
+            }
+          : r
+      )
+    );
   };
 
   const toggleComments = (id) => {
@@ -140,153 +122,198 @@ const SeeResources = () => {
     );
   };
 
+  const SelectBox = ({ value, onChange, options }) => (
+    <div className="relative group">
+      <select
+        value={value}
+        onChange={onChange}
+        className="
+          w-full appearance-none
+          bg-white/10 backdrop-blur-xl
+          border border-white/20
+          rounded-xl
+          px-4 py-3 pr-10
+          text-slate-200
+          transition-all duration-300
+          focus:outline-none focus:ring-2 focus:ring-indigo-400
+          focus:scale-[1.02]
+          hover:border-indigo-400
+        "
+      >
+        {options.map((o) => (
+          <option key={o} className="bg-slate-900 text-white">
+            {o}
+          </option>
+        ))}
+      </select>
+
+      {/* Animated Chevron */}
+      <FaChevronDown
+        className="
+          absolute right-4 top-1/2 -translate-y-1/2
+          text-slate-400
+          transition-transform duration-300
+          group-focus-within:rotate-180
+        "
+      />
+    </div>
+  );
+
   return (
-    <div className="resources-page">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
       <Header />
-      <main className="see-container">
-        <h1>Search Resources</h1>
-        <p>Filter resources by stream, semester, and subject.</p>
 
-        <form className="search-form" onSubmit={handleSearch}>
-          <div className="form-row">
-            <div className="form-group">
-              <label>Stream</label>
-              <select value={stream} onChange={(e) => setStream(e.target.value)}>
-                {streamsList.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </div>
+      <main className="max-w-7xl mx-auto px-6 py-14">
+        <h1 className="text-4xl font-bold text-white mb-3 text-center">
+          Browse <span className="text-indigo-400">Resources</span>
+        </h1>
 
-            <div className="form-group">
-              <label>Semester</label>
-              <select
-                value={semester}
-                onChange={(e) => setSemester(Number(e.target.value))}
-              >
-                {semestersList.map((sem) => (
-                  <option key={sem} value={sem}>
-                    {sem}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <p className="text-slate-300 text-center mb-10">
+          Filter resources by stream, semester, and subject
+        </p>
 
-            <div className="form-group">
-              <label>Subject</label>
-              <select value={subject} onChange={(e) => setSubject(e.target.value)}>
-                {resourcesData[stream][semester].map((subj) => (
-                  <option key={subj} value={subj}>
-                    {subj}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* FILTER BAR */}
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            fetchResources();
+          }}
+          className="
+            bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl
+            p-4 mb-16 mx-6 lg:mx-16
+            grid md:grid-cols-[1fr_1fr_1fr_auto]
+            gap-4 items-center
+          "
+        >
+          <SelectBox
+            value={stream}
+            onChange={(e) => setStream(e.target.value)}
+            options={streamsList}
+          />
 
-            <div className="form-actions">
-              <button type="submit">Search</button>
-            </div>
-          </div>
+          <SelectBox
+            value={semester}
+            onChange={(e) => setSemester(Number(e.target.value))}
+            options={semestersList}
+          />
+
+          <SelectBox
+            value={subject}
+            onChange={(e) => setSubject(e.target.value)}
+            options={resourcesData[stream][semester]}
+          />
+
+          {/* SEARCH BUTTON */}
+          <button
+            type="submit"
+            className="
+              outlined-btn
+              flex items-center gap-2
+              px-6 py-3
+              text-indigo-400
+              hover:text-white
+              transition
+              group
+            "
+          >
+            <FaSearch className="transition-transform group-hover:scale-110" />
+            Search
+          </button>
         </form>
 
-        <div className="resources-list">
-          {resources.length > 0 ? (
-            resources.map((res) => (
-              <div className="resource-card" key={res._id}>
-                <div className="resource-tags">
-                  <span className="tag stream">{res.stream}</span>
-                  <span className="tag semester">Sem {res.semester}</span>
-                  <span className="tag subject">{res.subject}</span>
-                </div>
-
-                <h3>{res.title}</h3>
-
-                <p className="desc">
-                  {res.description || "No description available"}
-                </p>
-
-                <div className="meta">
-                  <span>Uploaded by: {res.uploader?.name || "Unknown"}</span>
-                  <span>Date: {new Date(res.createdAt).toLocaleDateString()}</span>
-                </div>
-
-                {/* --- Updated Action Section --- */}
-                <div className="actions">
-                  <div className="like-section">
-                    <button
-                      onClick={() => handleLike(res._id)}
-                      className={`like-btn ${res.liked ? "liked" : ""}`}
-                    >
-                      <FaHeart className="heart-icon" />
-                      <span>{res.likes?.length || 0}</span>
-                    </button>
-                  </div>
-
-                  <div className="download-section">
-                    <button onClick={() => handleDownload(res._id)}>Download</button>
-                    
-                  </div>
-                </div>
-                {/* --- End Action Section --- */}
-                <p className="download-count">📥 {res.downloadCount || 0} Downloads</p>
-
-                <div className="comments-toggle">
-                  <button
-                    className="toggle-btn"
-                    onClick={() => toggleComments(res._id)}
-                  >
-                    {res.showComments
-                      ? "Hide Comments"
-                      : `View Comments (${res.comments?.length || 0})`}
-                  </button>
-                </div>
-
-                {res.showComments && (
-                  <div className="comments-section">
-                    <form
-                      onSubmit={(e) => handleCommentSubmit(e, res._id)}
-                      className="comment-form"
-                    >
-                      <input
-                        type="text"
-                        placeholder="Add a comment..."
-                        value={res.commentText || ""}
-                        onChange={(e) =>
-                          setResources((prev) =>
-                            prev.map((r) =>
-                              r._id === res._id
-                                ? { ...r, commentText: e.target.value }
-                                : r
-                            )
-                          )
-                        }
-                      />
-                      <button type="submit">Post</button>
-                    </form>
-
-                    <div className="comments-list">
-                      {res.comments?.length > 0 ? (
-                        res.comments.map((c) => (
-                          <p key={c._id}>
-                            <strong>{c.user?.name || user?.name || "User"}:</strong>{" "}
-                            {c.text}
-                          </p>
-                        ))
-                      ) : (
-                        <p className="no-comments">No comments yet</p>
-                      )}
-                    </div>
-                  </div>
-                )}
+        {/* RESOURCE LIST */}
+        <div className="grid md:grid-cols-2 gap-8">
+          {resources.map((res) => (
+            <div
+              key={res._id}
+              className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-4"
+            >
+              <div className="flex gap-2 text-base mb-3">
+                <span className="tag">{res.stream}</span>
+                <span className="tag">Sem {res.semester}</span>
+                <span className="tag">{res.subject}</span>
               </div>
-            ))
-          ) : (
-            <p>No resources found for selected filters.</p>
-          )}
+
+              <h3 className="text-xl font-semibold text-white mb-2">
+                {res.title}
+              </h3>
+
+              <p className="text-slate-300 text-sm mb-4">
+                {res.description || "No description"}
+              </p>
+
+              <p className="text-xs text-slate-400 mb-4">
+                Uploaded by {res.uploader?.name || "Unknown"} •{" "}
+                {new Date(res.createdAt).toLocaleDateString()}
+              </p>
+
+              <div className="flex justify-between items-center">
+                <button
+                  onClick={() => handleLike(res._id)}
+                  className={`flex items-center gap-2 ${
+                    res.liked ? "text-red-400" : "text-slate-300"
+                  }`}
+                >
+                  <FaHeart />
+                  {res.likes?.length || 0}
+                </button>
+
+                <button
+                  onClick={() => handleDownload(res._id)}
+                  className="flex items-center gap-2 text-indigo-400"
+                >
+                  <FaDownload />
+                  {res.downloadCount || 0}
+                </button>
+
+                <button
+                  onClick={() => toggleComments(res._id)}
+                  className="flex items-center gap-2 text-slate-300"
+                >
+                  <FaCommentDots />
+                  {res.comments?.length || 0}
+                </button>
+              </div>
+
+              {res.showComments && (
+                <div className="mt-6 border-t border-white/10 pt-4">
+                  <form
+                    onSubmit={(e) => handleCommentSubmit(e, res._id)}
+                    className="flex gap-2 mb-3"
+                  >
+                    <input
+                      value={res.commentText}
+                      onChange={(e) =>
+                        setResources((prev) =>
+                          prev.map((r) =>
+                            r._id === res._id
+                              ? { ...r, commentText: e.target.value }
+                              : r
+                          )
+                        )
+                      }
+                      placeholder="Add a comment..."
+                      className="input flex-1"
+                    />
+                    <button className="outlined-btn">Post</button>
+                  </form>
+
+                  {res.comments?.length ? (
+                    res.comments.map((c) => (
+                      <p key={c._id} className="text-sm text-slate-300">
+                        <strong>{c.user?.name || user?.name}:</strong> {c.text}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400">No comments yet</p>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </main>
+
       <Footer />
     </div>
   );

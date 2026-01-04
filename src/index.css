@@ -16,3 +16,16 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+.input {
+  @apply bg-white/10 border border-white/20 rounded-xl px-4 py-3
+  text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500;
+}
+
+.outlined-btn {
+  @apply border border-indigo-500 text-indigo-400 px-6 py-3 rounded-xl
+  hover:bg-indigo-500 hover:text-white transition;
+}
+
+.tag {
+  @apply bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full;
+}
