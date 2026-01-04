@@ -237,6 +237,37 @@
 .auth-links a:hover {
   text-decoration: underline;
 }
+.password-meter {
+  margin-top: 6px;
+}
+
+.strength-bar {
+  height: 6px;
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.level-1 { width: 25%; background: #dc2626; }
+.level-2 { width: 50%; background: #f59e0b; }
+.level-3 { width: 75%; background: #22c55e; }
+.level-4 { width: 100%; background: #16a34a; }
+
+.strength-text {
+  font-size: 12px;
+  margin-top: 4px;
+  display: inline-block;
+}
+
+.invalid {
+  border: 1px solid #dc2626;
+  background: #fff5f5;
+}
+
+.error {
+  color: #dc2626;
+  font-size: 14px;
+}
+
 /* ---------------- REGISTER UNIVERSITY WRAPPER ---------------- */
 .register-uni-wrapper {
   min-height: 100vh;
