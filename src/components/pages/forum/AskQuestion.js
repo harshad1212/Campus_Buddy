@@ -46,13 +46,9 @@ export default function AskQuestion() {
 
     try {
       setLoading(true);
-      await askQuestion({
-        question,
-        description,
-        tags,
-      });
+      await askQuestion({ question, description, tags });
       navigate("/forum");
-    } catch (err) {
+    } catch {
       setError("Something went wrong. Please try again.");
     } finally {
       setLoading(false);
@@ -60,110 +56,157 @@ export default function AskQuestion() {
   };
 
   return (
-    <>
-    <Header/>
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      {/* Header */}
-      <h2 className="text-3xl font-bold text-gray-800 mb-2">
-        Ask a Question
-      </h2>
-      <p className="text-gray-500 mb-6">
-        Be specific and imagine you’re asking another developer for help.
-      </p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
+      <Header />
 
-      {/* Form */}
-      <form
-        onSubmit={submitHandler}
-        className="bg-white border border-gray-200 rounded-xl p-6 space-y-6"
-      >
-        {/* Question Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Question Title
-          </label>
-          <input
-            className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="e.g. How to prevent multiple API calls in React?"
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            required
-          />
-          <p className="text-xs text-gray-500 mt-1">
-            {question.length}/120 characters
-          </p>
-        </div>
+      <div className="max-w-3xl mx-auto px-6 py-14">
+        {/* HEADER */}
+        <h2 className="text-4xl font-bold text-white mb-2">
+          Ask a <span className="text-indigo-400">Question</span>
+        </h2>
+        <p className="text-slate-300 mb-5">
+          Be specific and imagine you’re asking another student or developer.
+        </p>
 
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Description
-          </label>
-          <textarea
-            className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Explain what you tried, what you expected, and what actually happened."
-            rows={5}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-          />
-        </div>
-
-        {/* Tags */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Tags (up to 5)
-          </label>
-
-          <div className="flex flex-wrap gap-2 mb-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="flex items-center gap-1 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm"
-              >
-                #{tag}
-                <button
-                  type="button"
-                  onClick={() => removeTag(tag)}
-                  className="hover:text-red-500"
-                >
-                  <X size={14} />
-                </button>
-              </span>
-            ))}
+        {/* FORM */}
+        <form
+          onSubmit={submitHandler}
+          className="
+            bg-white/10 backdrop-blur-xl
+            border border-white/10
+            rounded-3xl p-8 space-y-4
+          "
+        >
+          {/* Question Title */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Question Title
+            </label>
+            <input
+              className="
+                w-full rounded-xl
+                bg-white/10 backdrop-blur
+                border border-white/20
+                px-4 py-3
+                text-white
+                transition-all
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+                focus:scale-[1.01]
+              "
+              placeholder="e.g. How to prevent multiple API calls in React?"
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              required
+            />
+            <p className="text-xs text-slate-400 mt-1">
+              {question.length}/120 characters
+            </p>
           </div>
 
-          <input
-            className="w-full border rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
-            placeholder="Type a tag and press Enter"
-            value={tagInput}
-            onChange={(e) => setTagInput(e.target.value)}
-            onKeyDown={addTag}
-          />
+          {/* Description */}
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Description
+            </label>
+            <textarea
+              className="
+                w-full rounded-xl
+                bg-white/10 backdrop-blur
+                border border-white/20
+                px-4 py-3
+                text-white
+                transition-all
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+                focus:scale-[1.01]
+              "
+              placeholder="Explain what you tried, what you expected, and what happened."
+              rows={5}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+            />
+          </div>
 
-          <p className="text-xs text-gray-500 mt-1">
-            Add relevant topics like <b>react</b>, <b>node</b>, <b>mongodb</b>
-          </p>
-        </div>
+          {/* Tags */}
+          <div>
+            <label className="block text-sm font-medium mb-0">
+              Tags <span className="text-slate-400">(up to 5)</span>
+            </label>
 
-        {/* Error */}
-        {error && (
-          <p className="text-sm text-red-600 font-medium">
-            {error}
-          </p>
-        )}
+            {/* Tag Pills */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="
+                    flex items-center gap-1
+                    bg-indigo-500/15
+                    text-indigo-300
+                    px-3 py-1.5
+                    rounded-full text-sm
+                    border border-indigo-400/30
+                  "
+                >
+                  #{tag}
+                  <button
+                    type="button"
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-red-400 transition"
+                  >
+                    <X size={14} />
+                  </button>
+                </span>
+              ))}
+            </div>
 
-        {/* Submit */}
-        <button
-          disabled={loading}
-          className={`w-full sm:w-auto px-6 py-2.5 rounded-lg font-medium text-white ${
-            loading
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Posting..." : "Post Question"}
-        </button>
-      </form>
+            {/* Tag Input */}
+            <input
+              className="
+                w-full rounded-xl
+                bg-white/10 backdrop-blur
+                border border-white/20
+                px-4 py-3
+                text-white
+                transition-all
+                focus:outline-none focus:ring-2 focus:ring-indigo-500
+              "
+              placeholder="Type a tag and press Enter"
+              value={tagInput}
+              onChange={(e) => setTagInput(e.target.value)}
+              onKeyDown={addTag}
+            />
+
+            <p className="text-xs text-slate-400 mt-1">
+              Examples: <b>react</b>, <b>node</b>, <b>mongodb</b>
+            </p>
+          </div>
+
+          {/* Error */}
+          {error && (
+            <p className="text-sm text-red-400 font-medium">
+              {error}
+            </p>
+          )}
+
+          {/* Submit */}
+          <div className="flex justify-end">
+            <button
+              disabled={loading}
+              className={`
+                px-8 py-3 rounded-xl
+                font-medium
+                transition-all
+                ${
+                  loading
+                    ? "bg-indigo-400/50 cursor-not-allowed"
+                    : "bg-indigo-500 hover:bg-indigo-600 hover:scale-[1.03]"
+                }
+              `}
+            >
+              {loading ? "Posting..." : "Post Question"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-    </>
   );
 }

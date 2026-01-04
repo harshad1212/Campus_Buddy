@@ -100,7 +100,7 @@ export default function ForumList() {
           >
             <option value="">All Tags</option>
             {allTags.map((tag) => (
-              <option key={tag} value={tag}>
+              <option key={tag} value={tag} className="bg-slate-900 text-white">
                 #{tag}
               </option>
             ))}

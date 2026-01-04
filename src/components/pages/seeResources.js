@@ -129,7 +129,7 @@ const SeeResources = () => {
         onChange={onChange}
         className="
           w-full appearance-none
-          bg-white/10 backdrop-blur-xl
+          bg-white/5 backdrop-blur-xl
           border border-white/20
           rounded-xl
           px-4 py-3 pr-10
@@ -222,11 +222,11 @@ const SeeResources = () => {
         </form>
 
         {/* RESOURCE LIST */}
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8 mx-10">
           {resources.map((res) => (
             <div
               key={res._id}
-              className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-4"
+              className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-5"
             >
               <div className="flex gap-2 text-base mb-3">
                 <span className="tag">{res.stream}</span>

@@ -110,7 +110,6 @@ const AdminDashboard = () => {
             </h2>
           </div>
           <div
-            onClick={() => setActiveView("pending")}
             className="bg-white rounded-xl shadow p-5 cursor-pointer hover:scale-[1.02] transition"
           >
             <p className="text-sm text-slate-500">Pending Events</p>

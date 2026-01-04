@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect,useRef, useState } from "react";
 import {
   getQuestion,
   postAnswer,
@@ -8,11 +8,16 @@ import {
   deleteAnswer,
 } from "../../services/forumApi";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreVertical, ChevronUp, ChevronDown } from "lucide-react";
+import {
+  ArrowLeft,
+  MoreVertical,
+  ChevronUp,
+  ChevronDown,
+} from "lucide-react";
 import Header from "../Header";
 
 /* ===============================
-   Avatar Component
+   Avatar
 =============================== */
 const Avatar = ({ name, src, size = 40 }) => {
   const initials = name
@@ -26,12 +31,12 @@ const Avatar = ({ name, src, size = 40 }) => {
       src={src}
       alt={name}
       style={{ width: size, height: size }}
-      className="rounded-full object-cover border border-blue-100"
+      className="rounded-full object-cover border border-white/20"
     />
   ) : (
     <div
       style={{ width: size, height: size }}
-      className="rounded-full bg-blue-600 text-white flex items-center justify-center font-semibold"
+      className="rounded-full bg-indigo-500 text-white flex items-center justify-center font-semibold"
     >
       {initials}
     </div>
@@ -41,12 +46,14 @@ const Avatar = ({ name, src, size = 40 }) => {
 export default function QuestionDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const answerRef = useRef(null);
 
   const [question, setQuestion] = useState(null);
   const [answerText, setAnswerText] = useState("");
   const [editingAnswerId, setEditingAnswerId] = useState(null);
   const [editedText, setEditedText] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
+  const [localVotes, setLocalVotes] = useState({});
 
   const currentUser = (() => {
     try {
@@ -56,10 +63,8 @@ export default function QuestionDetail() {
     }
   })();
 
-  console.log("Current User:", currentUser);
-
   /* ===============================
-     Load Question
+     Load
   =============================== */
   const loadQuestion = async () => {
     const res = await getQuestion(id);
@@ -85,18 +90,46 @@ export default function QuestionDetail() {
      Actions
   =============================== */
   const handleVote = async (answerId, voteValue) => {
+  const answer = question.answers.find((a) => a._id === answerId);
+  const serverVote = getUserVote(answer, currentUser);
+  const localVote = localVotes[answerId] ?? serverVote;
+
+  // 🔁 Same vote clicked → remove color only (NO API CALL)
+  if (localVote === voteValue) {
+    setLocalVotes((prev) => ({
+      ...prev,
+      [answerId]: 0,
+    }));
+    return;
+  }
+
+  // ✅ New or switched vote → API call
+  setLocalVotes((prev) => ({
+    ...prev,
+    [answerId]: voteValue,
+  }));
+
+  try {
     await voteAnswer(id, answerId, voteValue);
-    await loadQuestion();
-  };
-
-const handleMarkBest = async (answerId) => {
-  await markBestAnswer(id, answerId);
-
-  // force fresh DB read
-  const fresh = await getQuestion(id);
-  setQuestion(fresh.data);
+    loadQuestion();
+  } catch (err) {
+    console.error(err);
+  }
 };
 
+
+  const handleMarkBest = async (answerId) => {
+    await markBestAnswer(id, answerId);
+    const fresh = await getQuestion(id);
+    setQuestion(fresh.data);
+  };
+
+  const submitAnswer = async () => {
+    if (!answerText.trim()) return;
+    const res = await postAnswer(id, answerText);
+    setQuestion(res.data);
+    setAnswerText("");
+  };
 
   const startEdit = (a) => {
     setEditingAnswerId(a._id);
@@ -116,75 +149,83 @@ const handleMarkBest = async (answerId) => {
     setQuestion(res.data);
   };
 
-  const submitAnswer = async () => {
-    if (!answerText.trim()) return;
-    const res = await postAnswer(id, answerText);
-    setQuestion(res.data);
-    setAnswerText("");
-  };
-
   if (!question) return null;
 
   const isOwner = question.askedBy?._id === currentUser;
 
   return (
-    <>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
       <Header />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+      <div className="max-w-5xl mx-auto px-6 py-10">
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-800 mb-6"
+          className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 mb-6"
         >
           <ArrowLeft size={18} /> Back to forum
         </button>
 
-        {/* Question Card */}
-        <div className="bg-white rounded-2xl border border-blue-100 shadow-sm p-6 sm:p-8">
+        {/* Question */}
+        <div className="bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-8">
           <div className="flex items-center gap-4 mb-4">
             <Avatar
               name={question.askedBy?.name}
               src={question.askedBy?.avatarUrl}
             />
-            <p className="font-semibold text-gray-800">
+            <p className="font-semibold text-white">
               {question.askedBy?.name}
             </p>
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white">
             {question.question}
           </h2>
-          <p className="text-gray-600 mt-3 leading-relaxed">
+
+          <p className="mt-4 text-slate-300 leading-relaxed">
             {question.description}
           </p>
         </div>
 
         {/* Answers */}
-        <h3 className="mt-10 text-lg sm:text-xl font-semibold text-gray-800">
-          {question.answers.length} Answers
-        </h3>
+        <div className="mt-10 flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-white">
+            {question.answers.length} Answers
+          </h3>
 
-        <div className="space-y-5 mt-4">
+          {!isOwner && (
+            <button
+              onClick={() =>
+                answerRef.current?.scrollIntoView({ behavior: "smooth" })
+              }
+              className="text-sm px-4 py-2 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 hover:bg-indigo-500/30 transition"
+            >
+              ✍️ Write an answer
+            </button>
+          )}
+        </div>
+
+
+        <div className="space-y-6 mt-5">
           {question.answers
             .filter((a) => a.userId)
             .sort((a, b) => b.isBestAnswer - a.isBestAnswer)
             .map((a) => {
-              const userVote = getUserVote(a, currentUser);
-              const canManage =
-                a.userId?._id === currentUser;
+            const userVote =
+            localVotes[a._id] ?? getUserVote(a, currentUser);
+              const canManage = a.userId?._id === currentUser;
 
               return (
                 <div
-                  key={`${a._id}-${a.isBestAnswer}`}
-                  className={`rounded-2xl border p-5 sm:p-6 transition ${
+                  key={a._id}
+                  className={`rounded-3xl p-6 border transition ${
                     a.isBestAnswer
-                      ? "border-green-400 bg-green-50"
-                      : "border-blue-100 bg-white hover:shadow-sm"
+                      ? "bg-green-500/10 border-green-400/40"
+                      : "bg-white/10 border-white/10 hover:shadow-lg"
                   }`}
                 >
                   {/* Header */}
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={a.userId?.name}
@@ -192,11 +233,11 @@ const handleMarkBest = async (answerId) => {
                         size={34}
                       />
                       <div>
-                        <p className="font-medium text-gray-800">
+                        <p className="font-medium text-white">
                           {a.userId?.name}
                         </p>
                         {a.isBestAnswer && (
-                          <span className="text-green-600 text-sm font-semibold">
+                          <span className="text-green-400 text-sm font-semibold">
                             ✔ Accepted Answer
                           </span>
                         )}
@@ -212,20 +253,20 @@ const handleMarkBest = async (answerId) => {
                             )
                           }
                         >
-                          <MoreVertical size={18} />
+                          <MoreVertical />
                         </button>
 
                         {openMenuId === a._id && (
-                          <div className="absolute right-0 mt-2 w-32 bg-white border rounded-lg shadow">
+                          <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-white/10 rounded-xl shadow">
                             <button
                               onClick={() => startEdit(a)}
-                              className="w-full px-4 py-2 text-left hover:bg-blue-50"
+                              className="w-full px-4 py-2 text-left hover:bg-white/10"
                             >
                               Edit
                             </button>
                             <button
                               onClick={() => removeAnswer(a._id)}
-                              className="w-full px-4 py-2 text-left text-red-600 hover:bg-red-50"
+                              className="w-full px-4 py-2 text-left text-red-400 hover:bg-red-500/10"
                             >
                               Delete
                             </button>
@@ -239,57 +280,56 @@ const handleMarkBest = async (answerId) => {
                   {editingAnswerId === a._id ? (
                     <>
                       <textarea
-                        className="w-full mt-4 border rounded-lg p-3 focus:ring-2 focus:ring-blue-500"
+                        className="w-full mt-4 rounded-xl bg-white/10 border border-white/20 p-3 focus:ring-2 focus:ring-indigo-500"
                         value={editedText}
                         onChange={(e) => setEditedText(e.target.value)}
                       />
                       <button
                         onClick={() => saveEdit(a._id)}
-                        className="mt-3 bg-blue-600 text-white px-5 py-1.5 rounded-lg hover:bg-blue-700"
+                        className="mt-3 bg-indigo-500 hover:bg-indigo-600 px-5 py-2 rounded-xl"
                       >
                         Save
                       </button>
                     </>
                   ) : (
-                    <p className="mt-4 text-gray-700 leading-relaxed">
+                    <p className="mt-4 text-slate-300 leading-relaxed">
                       {a.text}
                     </p>
                   )}
 
                   {/* Voting */}
-                  <div className="flex items-center gap-4 mt-5">
+                  <div className="flex items-center gap-4 mt-6">
                     <button onClick={() => handleVote(a._id, 1)}>
                       <ChevronUp
-                        size={22}
-                        className={
+                        className={`transition transform ${
                           userVote === 1
-                            ? "text-blue-600"
-                            : "text-gray-400 hover:text-blue-600"
-                        }
+                            ? "text-indigo-500 scale-110"
+                            : "text-slate-400 hover:text-indigo-400"
+                        }`}
+                        strokeWidth={2}
                       />
+
                     </button>
 
-                    <span className="font-semibold text-gray-700">
-                      {a.votes}
-                    </span>
+                    <span className="font-semibold">{a.votes}</span>
 
                     <button onClick={() => handleVote(a._id, -1)}>
                       <ChevronDown
-                        size={22}
-                        className={
+                        className={`transition transform ${
                           userVote === -1
-                            ? "text-orange-600"
-                            : "text-gray-400 hover:text-orange-600"
-                        }
+                            ? "text-orange-500 scale-110"
+                            : "text-slate-400 hover:text-orange-400"
+                        }`}
+                        strokeWidth={2}
                       />
+
                     </button>
 
-                        {console.log(question.askedBy?._id, currentUser)}
                     {question.askedBy?._id === currentUser &&
                       !a.isBestAnswer && (
                         <button
                           onClick={() => handleMarkBest(a._id)}
-                          className="ml-auto text-green-600 hover:underline"
+                          className="ml-auto text-green-400 hover:underline"
                         >
                           Mark Accepted
                         </button>
@@ -302,23 +342,25 @@ const handleMarkBest = async (answerId) => {
 
         {/* Post Answer */}
         {!isOwner && (
-          <div className="mt-10 bg-white border border-blue-100 rounded-2xl p-6">
+          <div className="mt-10 bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl p-6">
             <textarea
-              className="w-full border rounded-lg px-4 py-3 focus:ring-2 focus:ring-blue-500"
-              rows={4}
-              placeholder="Write your answer..."
-              value={answerText}
-              onChange={(e) => setAnswerText(e.target.value)}
-            />
+            ref={answerRef}
+            className="w-full rounded-xl bg-white/10 border border-white/20 px-4 py-3 focus:ring-2 focus:ring-indigo-500"
+            rows={4}
+            placeholder="Write your answer..."
+            value={answerText}
+            onChange={(e) => setAnswerText(e.target.value)}
+          />
+
             <button
               onClick={submitAnswer}
-              className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+              className="mt-4 bg-indigo-500 hover:bg-indigo-600 px-6 py-2 rounded-xl"
             >
               Post Answer
             </button>
           </div>
         )}
       </div>
-    </>
+    </div>
   );
 }
