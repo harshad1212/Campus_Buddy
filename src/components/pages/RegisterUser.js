@@ -6,37 +6,7 @@ import "./css/AuthLayout.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
-/* ================= REGEX ================= */
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^[0-9]{10}$/;
-const nameRegex = /^[A-Za-z ]{3,}$/;
-const MIN_AGE = 16;
-
-/* ================= HELPERS ================= */
-const calculateAge = (dob) => {
-  if (!dob) return 0;
-  const diff = Date.now() - dob.getTime();
-  return new Date(diff).getUTCFullYear() - 1970;
-};
-
-const getPasswordStrength = (password) => {
-  let score = 0;
-  if (password.length >= 6) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-
-  if (score <= 1) return { label: "Weak", level: 1 };
-  if (score === 2) return { label: "Medium", level: 2 };
-  if (score === 3) return { label: "Strong", level: 3 };
-  return { label: "Very Strong", level: 4 };
-};
-
 const RegisterUser = () => {
-  const navigate = useNavigate();
-  const fileInputRef = useRef(null);
-
-  /* ================= STATES ================= */
   const [role, setRole] = useState("student");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -44,6 +14,9 @@ const RegisterUser = () => {
   const [universities, setUniversities] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [semesters, setSemesters] = useState([]);
+
+  const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   const [fileName, setFileName] = useState("Upload Profile Photo");
   const [preview, setPreview] = useState(null);
@@ -54,9 +27,10 @@ const RegisterUser = () => {
     password: "",
     phone: "",
     gender: "",
-    dob: null,
+    dob: "",
     universityCode: "",
     department: "",
+    course: "",
     semester: "",
     registrationCode: "",
     enrollmentNumber: "",
@@ -65,135 +39,60 @@ const RegisterUser = () => {
     profilePhoto: null,
   });
 
-  const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [passwordStrength, setPasswordStrength] = useState({
-    label: "",
-    level: 0,
-  });
-
-  /* ================= VALIDATION ================= */
-  const validateField = (name, value) => {
-    switch (name) {
-      case "name":
-        if (!value) return "Full name is required";
-        if (!nameRegex.test(value)) return "Only alphabets, min 3 characters";
-        return "";
-
-      case "email":
-        if (!value) return "Email is required";
-        if (!emailRegex.test(value)) return "Invalid email format";
-        return "";
-
-      case "password":
-        if (!value) return "Password is required";
-        if (value.length < 6) return "Minimum 6 characters required";
-        return "";
-
-      case "phone":
-        if (!value) return "Phone number is required";
-        if (!phoneRegex.test(value)) return "Enter valid 10-digit number";
-        return "";
-
-      case "gender":
-        return value ? "" : "Please select gender";
-
-      case "registrationCode":
-        return value ? "" : "Registration code required";
-
-      case "enrollmentNumber":
-        if (!value) return "Enrollment number required";
-        if (value.length < 6) return "Invalid enrollment number";
-        return "";
-
-      case "employeeId":
-        return value ? "" : "Employee ID required";
-
-      case "designation":
-        if (!value) return "Designation required";
-        if (value.length < 3) return "Min 3 characters";
-        return "";
-
-      default:
-        return "";
-    }
-  };
-
-  /* ================= HANDLERS ================= */
-  const handleChange = (e) => {
-    const { name, value, files } = e.target;
-
-    if (name === "password") {
-      setPasswordStrength(getPasswordStrength(value));
-    }
-
-    if (name === "profilePhoto") {
-      const file = files[0];
-      if (!file) return;
-
-      if (!file.type.startsWith("image/"))
-        return setErrors((p) => ({ ...p, profilePhoto: "Only images allowed" }));
-
-      if (file.size > 2 * 1024 * 1024)
-        return setErrors((p) => ({ ...p, profilePhoto: "Max size 2MB" }));
-
-      setFormData((p) => ({ ...p, profilePhoto: file }));
-      setFileName(file.name);
-      setPreview(URL.createObjectURL(file));
-      return;
-    }
-
-    setFormData((p) => ({ ...p, [name]: value }));
-  };
-
-  const handleBlur = (e) => {
-    const { name, value } = e.target;
-    setTouched((p) => ({ ...p, [name]: true }));
-    setErrors((p) => ({ ...p, [name]: validateField(name, value) }));
-  };
-
-  /* ================= FETCH DATA ================= */
+  /* ================= FETCH UNIVERSITIES ================= */
   useEffect(() => {
     fetch("http://localhost:4000/api/university/universities")
       .then((res) => res.json())
-      .then(setUniversities);
+      .then(setUniversities)
+      .catch(console.error);
   }, []);
 
+  /* ================= FETCH DEPARTMENTS ================= */
   useEffect(() => {
-    if (!formData.universityCode) return;
+    if (!formData.universityCode) {
+      setDepartments([]);
+      return;
+    }
+
     fetch(
       `http://localhost:4000/api/university/${formData.universityCode}/departments`
     )
       .then((res) => res.json())
-      .then((d) => setDepartments(d.departments || []));
+      .then((data) => setDepartments(data.departments || []))
+      .catch(console.error);
   }, [formData.universityCode]);
 
+  /* ================= FETCH SEMESTERS ================= */
   useEffect(() => {
-    if (!formData.department) return;
+    if (!formData.department) {
+      setSemesters([]);
+      return;
+    }
+
     fetch(
       `http://localhost:4000/api/university/department/${formData.department}/semesters`
     )
       .then((res) => res.json())
-      .then((d) => setSemesters(d.semesters || []));
+      .then((data) => setSemesters(data.semesters || []))
+      .catch(console.error);
   }, [formData.department]);
 
-  /* ================= STEP VALIDATION ================= */
-  const step1Valid =
-    !errors.name &&
-    !errors.email &&
-    !errors.password &&
-    !errors.phone &&
-    !errors.dob &&
-    formData.gender &&
-    formData.dob;
+  /* ================= HANDLE CHANGE ================= */
+  const handleChange = (e) => {
+    const { name, value, files } = e.target;
 
-  const step2Valid =
-    formData.universityCode &&
-    formData.department &&
-    formData.registrationCode &&
-    (role === "student"
-      ? formData.semester && !errors.enrollmentNumber
-      : !errors.employeeId && !errors.designation);
+    if (name === "profilePhoto") {
+      const file = files[0];
+      setFormData((p) => ({ ...p, profilePhoto: file }));
+      setFileName(file.name);
+      setPreview(URL.createObjectURL(file));
+    } else {
+      setFormData((p) => ({ ...p, [name]: value }));
+    }
+  };
+
+  const nextStep = () => setStep((s) => s + 1);
+  const prevStep = () => setStep((s) => s - 1);
 
   /* ================= SUBMIT ================= */
   const handleRegister = async (e) => {
@@ -202,33 +101,45 @@ const RegisterUser = () => {
 
     try {
       const fd = new FormData();
-      Object.entries(formData).forEach(([k, v]) => v && fd.append(k, v));
+
+      Object.entries(formData).forEach(([key, value]) => {
+        if (value !== "") fd.append(key, value);
+      });
+
       fd.append("role", role);
+
+      if (role === "student") {
+        fd.set("semester", Number(formData.semester));
+      }
 
       const res = await fetch(
         `${process.env.REACT_APP_API_URL}/api/register-request`,
-        { method: "POST", body: fd }
+        {
+          method: "POST",
+          body: fd,
+        }
       );
 
       const data = await res.json();
       setLoading(false);
 
-      if (!res.ok) return alert(data.error || "Registration failed");
+      if (!res.ok) return alert(data.error);
 
-      alert("Registration request submitted");
+      alert("Registration request sent for approval");
       navigate("/login");
-    } catch {
+    } catch (err) {
+      console.error(err);
       setLoading(false);
       alert("Server error");
     }
   };
 
-  /* ================= JSX ================= */
   return (
     <div className="auth-wrapper">
       <motion.div className="auth-card">
         <h2 className="auth-title">Academic Registration</h2>
 
+        {/* ROLE TOGGLE */}
         <div className="role-toggle">
           <button
             type="button"
@@ -246,106 +157,221 @@ const RegisterUser = () => {
           </button>
         </div>
 
-        <form onSubmit={handleRegister} className="auth-form">
+        {/* STEP INDICATOR */}
+        <div className="step-indicator">
+          <span className={step >= 1 ? "active" : ""}>1</span>
+          <span className={step >= 2 ? "active" : ""}>2</span>
+          <span className={step >= 3 ? "active" : ""}>3</span>
+        </div>
+
+        <form
+          onSubmit={handleRegister}
+          encType="multipart/form-data"
+          className="auth-form"
+        >
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <>
               <div className="grid-2">
-                {["name", "email", "phone"].map((field) => (
-                  <div key={field}>
-                    {touched[field] && (
-                      <small className="error">{errors[field]}</small>
-                    )}
-                    <input
-                      name={field}
-                      placeholder={
-                        field === "phone" ? "Phone Number" : field
-                      }
-                      onChange={handleChange}
-                      onBlur={handleBlur}
-                      className={
-                        touched[field] && errors[field] ? "invalid" : ""
-                      }
-                    />
-                    
-                  </div>
-                ))}
+                <input
+                  name="name"
+                  placeholder="Full Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                />
 
-                {/* PASSWORD */}
-                <div>
-                  <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={
-                      touched.password && errors.password ? "invalid" : ""
-                    }
-                  />
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
 
-                  {formData.password && (
-                    <div className="password-meter">
-                      <div
-                        className={`strength-bar level-${passwordStrength.level}`}
-                      />
-                      <span
-                        className={`strength-text level-${passwordStrength.level}`}
-                      >
-                        {passwordStrength.label}
-                      </span>
-                    </div>
-                  )}
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
 
-                  {touched.password && (
-                    <small className="error">{errors.password}</small>
-                  )}
-                </div>
+                <input
+                  name="phone"
+                  placeholder="Phone Number"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                />
 
                 <select
                   name="gender"
+                  value={formData.gender}
                   onChange={handleChange}
-                  onBlur={handleBlur}
+                  required
                 >
                   <option value="">Select Gender</option>
                   <option>Male</option>
                   <option>Female</option>
                 </select>
 
-                <div>
-                  <DatePicker
-                    selected={formData.dob}
-                    maxDate={new Date()}
-                    placeholderText="Date of Birth"
-                    onChange={(d) => {
-                      setFormData({ ...formData, dob: d });
-                      setTouched((p) => ({ ...p, dob: true }));
-                      if (calculateAge(d) < MIN_AGE)
-                        setErrors((p) => ({
-                          ...p,
-                          dob: `Minimum age is ${MIN_AGE}`,
-                        }));
-                      else setErrors((p) => ({ ...p, dob: "" }));
-                    }}
-                  />
-                  {touched.dob && (
-                    <small className="error">{errors.dob}</small>
-                  )}
-                </div>
+                <DatePicker
+                  selected={formData.dob}
+                  onChange={(date) =>
+                    setFormData({ ...formData, dob: date })
+                  }
+                  placeholderText="Date of Birth"
+                />
               </div>
 
-              <button
-                type="button"
-                disabled={!step1Valid}
-                onClick={() => setStep(2)}
-                className="auth-btn"
-              >
+              <button type="button" className="auth-btn" onClick={nextStep}>
                 Next
               </button>
             </>
           )}
 
-          {/* ================= STEP 2 & 3 SAME AS BEFORE ================= */}
+          {/* ================= STEP 2 ================= */}
+          {step === 2 && (
+            <>
+              <div className="grid-2">
+                <select
+                  name="universityCode"
+                  value={formData.universityCode}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select University</option>
+                  {universities.map((u) => (
+                    <option key={u._id} value={u.code}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((d, i) => (
+                    <option key={i} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+
+                {role === "student" && (
+                  <select
+                    name="semester"
+                    value={formData.semester}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Semester</option>
+                    {semesters.map((s, i) => (
+                      <option key={i} value={s}>
+                        {s}
+                      </option>
+                    ))}
+                  </select>
+                )}
+
+                <input
+                  name="registrationCode"
+                  placeholder={`${
+                    role === "student" ? "Student" : "Teacher"
+                  } Registration Code`}
+                  value={formData.registrationCode}
+                  onChange={handleChange}
+                  required
+                />
+
+                {role === "student" && (
+                  <input
+                    name="enrollmentNumber"
+                    placeholder="Enrollment Number"
+                    value={formData.enrollmentNumber}
+                    onChange={handleChange}
+                    required
+                  />
+                )}
+
+                {role === "teacher" && (
+                  <>
+                    <input
+                      name="employeeId"
+                      placeholder="Employee ID"
+                      value={formData.employeeId}
+                      onChange={handleChange}
+                      required
+                    />
+                    <input
+                      name="designation"
+                      placeholder="Designation"
+                      value={formData.designation}
+                      onChange={handleChange}
+                      required
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="step-buttons">
+                <button type="button" onClick={prevStep}>
+                  Back
+                </button>
+                <button type="button" onClick={nextStep}>
+                  Next
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* ================= STEP 3 ================= */}
+          {step === 3 && (
+            <>
+              <input
+                type="file"
+                name="profilePhoto"
+                hidden
+                ref={fileInputRef}
+                accept="image/*"
+                onChange={handleChange}
+              />
+
+              <div
+                className="custom-file-upload"
+                onClick={() => fileInputRef.current.click()}
+              >
+                <span>{fileName}</span>
+                <span className="browse-btn">Browse</span>
+              </div>
+
+              {preview && (
+                <div className="profile-preview">
+                  <img src={preview} alt="Preview" />
+                </div>
+              )}
+
+              <div className="step-buttons">
+                <button type="button" onClick={prevStep}>
+                  Back
+                </button>
+                <button className="auth-btn" disabled={loading}>
+                  {loading ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    "Submit"
+                  )}
+                </button>
+              </div>
+            </>
+          )}
         </form>
 
         <p className="auth-links">

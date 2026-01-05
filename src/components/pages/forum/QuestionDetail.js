@@ -1,4 +1,4 @@
-import React, { useEffect,useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   getQuestion,
   postAnswer,
@@ -54,21 +54,22 @@ export default function QuestionDetail() {
   const [editedText, setEditedText] = useState("");
   const [openMenuId, setOpenMenuId] = useState(null);
   const [localVotes, setLocalVotes] = useState({});
+  const [localVoteCounts, setLocalVoteCounts] = useState({});
 
-  const currentUser = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("user"));
-    } catch {
-      return null;
-    }
-  })();
+  const currentUser = JSON.parse(localStorage.getItem("user") || "null");
 
   /* ===============================
-     Load
+     Load Question
   =============================== */
   const loadQuestion = async () => {
     const res = await getQuestion(id);
     setQuestion(res.data);
+
+    const counts = {};
+    res.data.answers.forEach((a) => {
+      counts[a._id] = a.votes;
+    });
+    setLocalVoteCounts(counts);
   };
 
   useEffect(() => {
@@ -78,57 +79,67 @@ export default function QuestionDetail() {
   /* ===============================
      Helpers
   =============================== */
-  const getUserVote = (answer, userId) => {
-    if (!answer?.voters || !userId) return 0;
-    const v = answer.voters.find(
-      (x) => x.userId?.toString() === userId.toString()
+  const getUserVote = (answer) => {
+    if (!currentUser) return 0;
+    const v = answer.voters?.find(
+      (x) => x.userId?.toString() === currentUser._id
     );
     return v ? v.vote : 0;
   };
 
   /* ===============================
-     Actions
+     Vote Handler (Optimistic)
   =============================== */
   const handleVote = async (answerId, voteValue) => {
-  const answer = question.answers.find((a) => a._id === answerId);
-  const serverVote = getUserVote(answer, currentUser);
-  const localVote = localVotes[answerId] ?? serverVote;
+    const answer = question.answers.find((a) => a._id === answerId);
 
-  // 🔁 Same vote clicked → remove color only (NO API CALL)
-  if (localVote === voteValue) {
-    setLocalVotes((prev) => ({
-      ...prev,
-      [answerId]: 0,
+    const serverVote = getUserVote(answer);
+    const currentVote = localVotes[answerId] ?? serverVote;
+
+    let diff = 0;
+    let nextVote = voteValue;
+
+    // toggle same vote
+    if (currentVote === voteValue) {
+      diff = -voteValue;
+      nextVote = 0;
+    }
+    // switch vote
+    else if (currentVote !== 0) {
+      diff = voteValue * 2;
+    }
+    // new vote
+    else {
+      diff = voteValue;
+    }
+
+    setLocalVotes((p) => ({ ...p, [answerId]: nextVote }));
+    setLocalVoteCounts((p) => ({
+      ...p,
+      [answerId]: (p[answerId] ?? answer.votes) + diff,
     }));
-    return;
-  }
 
-  // ✅ New or switched vote → API call
-  setLocalVotes((prev) => ({
-    ...prev,
-    [answerId]: voteValue,
-  }));
-
-  try {
-    await voteAnswer(id, answerId, voteValue);
-    loadQuestion();
-  } catch (err) {
-    console.error(err);
-  }
-};
-
-
-  const handleMarkBest = async (answerId) => {
-    await markBestAnswer(id, answerId);
-    const fresh = await getQuestion(id);
-    setQuestion(fresh.data);
+    try {
+      await voteAnswer(id, answerId, voteValue);
+    } catch (err) {
+      console.error(err);
+      loadQuestion(); // rollback
+    }
   };
 
+  /* ===============================
+     Other Actions
+  =============================== */
   const submitAnswer = async () => {
     if (!answerText.trim()) return;
     const res = await postAnswer(id, answerText);
     setQuestion(res.data);
     setAnswerText("");
+  };
+  const handleMarkBest = async (answerId) => {
+    await markBestAnswer(id, answerId);
+    const fresh = await getQuestion(id);
+    setQuestion(fresh.data);
   };
 
   const startEdit = (a) => {
@@ -149,21 +160,20 @@ export default function QuestionDetail() {
     setQuestion(res.data);
   };
 
-  if (!question) return null;
 
-  const isOwner = question.askedBy?._id === currentUser;
+  if (!question) return null;
+  const isOwner = question.askedBy?._id === currentUser?._id;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
       <Header />
 
       <div className="max-w-5xl mx-auto px-6 py-10">
-        {/* Back */}
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 text-indigo-400 hover:text-indigo-300 mb-6"
         >
-          <ArrowLeft size={18} /> Back to forum
+          <ArrowLeft size={18} /> Back
         </button>
 
         {/* Question */}
@@ -186,8 +196,6 @@ export default function QuestionDetail() {
             {question.description}
           </p>
         </div>
-
-        {/* Answers */}
         <div className="mt-10 flex items-center justify-between">
           <h3 className="text-xl font-semibold text-white">
             {question.answers.length} Answers
@@ -206,26 +214,28 @@ export default function QuestionDetail() {
         </div>
 
 
-        <div className="space-y-6 mt-5">
+        {/* Answers */}
+        <div className="space-y-6 mt-10">
           {question.answers
             .filter((a) => a.userId)
             .sort((a, b) => b.isBestAnswer - a.isBestAnswer)
             .map((a) => {
-            const userVote =
-            localVotes[a._id] ?? getUserVote(a, currentUser);
-              const canManage = a.userId?._id === currentUser;
 
-              return (
-                <div
-                  key={a._id}
-                  className={`rounded-3xl p-6 border transition ${
+            const userVote = localVotes[a._id] ?? getUserVote(a);
+            const voteCount = localVoteCounts[a._id] ?? a.votes;
+            const canManage = a.userId?._id === currentUser;
+
+            return (
+              <div
+                key={a._id}
+                className={`rounded-3xl p-6 border transition ${
                     a.isBestAnswer
                       ? "bg-green-500/10 border-green-400/40"
                       : "bg-white/10 border-white/10 hover:shadow-lg"
                   }`}
-                >
-                  {/* Header */}
-                  <div className="flex justify-between">
+              >
+
+                <div className="flex justify-between">
                     <div className="flex items-center gap-3">
                       <Avatar
                         name={a.userId?.name}
@@ -301,39 +311,47 @@ export default function QuestionDetail() {
                   <div className="flex items-center gap-4 mt-6">
                     <button onClick={() => handleVote(a._id, 1)}>
                       <ChevronUp
-                        className={`transition transform ${
+                        className={`transition-all duration-200 ${
                           userVote === 1
-                            ? "text-indigo-500 scale-110"
+                            ? "text-indigo-500 scale-125"
                             : "text-slate-400 hover:text-indigo-400"
                         }`}
-                        strokeWidth={2}
                       />
-
                     </button>
 
-                    <span className="font-semibold">{a.votes}</span>
 
-                    <button onClick={() => handleVote(a._id, -1)}>
+                    <span
+                      className={`font-semibold transition-all duration-200 ${
+                        userVote === 1
+                          ? "text-indigo-400"
+                          : userVote === -1
+                          ? "text-orange-400"
+                          : "text-slate-300"
+                      }`}
+                    >
+                      {voteCount}
+                    </span>
+
+                                        <button onClick={() => handleVote(a._id, -1)}>
                       <ChevronDown
-                        className={`transition transform ${
+                        className={`transition-all duration-200 ${
                           userVote === -1
-                            ? "text-orange-500 scale-110"
+                            ? "text-orange-500 scale-125"
                             : "text-slate-400 hover:text-orange-400"
                         }`}
-                        strokeWidth={2}
                       />
-
                     </button>
 
-                    {question.askedBy?._id === currentUser &&
-                      !a.isBestAnswer && (
-                        <button
-                          onClick={() => handleMarkBest(a._id)}
-                          className="ml-auto text-green-400 hover:underline"
-                        >
-                          Mark Accepted
-                        </button>
-                      )}
+
+                    {isOwner && !a.isBestAnswer && (
+                      <button
+                        onClick={() => handleMarkBest(a._id)}
+                        className="ml-auto text-green-400 hover:underline"
+                      >
+                        Mark Accepted
+                      </button>
+                    )}
+
                   </div>
                 </div>
               );
@@ -362,5 +380,6 @@ export default function QuestionDetail() {
         )}
       </div>
     </div>
+
   );
 }

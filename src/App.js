@@ -15,7 +15,6 @@ import MyResources from './components/pages/myResources';
 import EventsPage from './components/Events/EventsPage';
 import CreateEvent from './components/Events/CreateEvents';
 import AdminEvents from './components/Events/AdminEvents';
-import RoleSelection from "./components/pages/RoleSelection";
 import RegisterUniversity from "./components/pages/RegisterUniversity";
 import AdminLogin from "./components/pages/AdminLogin";
 import AdminDashboard from './components/admin/AdminDashboard';
@@ -40,7 +39,6 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<Welcome />} />
-        <Route path="/get-started" element={<RoleSelection />} />
         <Route path='/register-user' element={<RegisterUser />} />
         <Route path="/admin-login" element={<AdminLogin />} />
         <Route path="/login" element={<Login setCurrentUser={setCurrentUser} />} />

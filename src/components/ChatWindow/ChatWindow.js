@@ -569,273 +569,230 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], frie
   }, [messages, isBlocked, chatUser]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      
-      {/* //  PART 1 — HEADER + MENU (Telegram Style) */}
-      
+  <div className="flex flex-col h-full bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
 
-      <div className="px-4 py-3 flex items-center justify-between bg-white/70 backdrop-blur-md border-b border-blue-100 shadow-sm sticky top-0 z-20">
+    {/* ================= HEADER ================= */}
+    <div className="px-4 py-3 flex items-center justify-between
+      bg-white/5 backdrop-blur-xl
+      border-b border-white/10
+      sticky top-0 z-20">
 
-        {/* LEFT : USER INFO */}
-        <div className="flex items-center gap-3">
-          <img
-            src={chatUser?.avatarUrl || "/default-avatar.png"}
-            alt={chatUser?.name}
-            className="w-10 h-10 rounded-full object-cover shadow-sm border border-blue-200"
-          />
+      {/* USER INFO */}
+      <div className="flex items-center gap-3">
+        <img
+          src={chatUser?.avatarUrl || "/default-avatar.png"}
+          alt={chatUser?.name}
+          className="w-10 h-10 rounded-full object-cover
+          border border-white/20 shadow-md"
+        />
 
-          <div className="leading-tight">
-            <p className="text-sm font-semibold text-gray-800">
-              {chatUser?.name || "Unknown User"}
-            </p>
-
-            <p
-              className={`text-[11px] ${isBlocked
-                ? "text-red-500"
+        <div className="leading-tight">
+          <p className="text-sm font-semibold text-white">
+            {chatUser?.name || "Unknown User"}
+          </p>
+          <p
+            className={`text-[11px] ${
+              isBlocked
+                ? "text-red-400"
                 : chatUser?.online
-                  ? "text-green-500"
-                  : "text-gray-400"
-                }`}
-            >
-              {isBlocked
-                ? "You blocked this user"
-                : chatUser?.online
-                  ? "Online"
-                  : chatUser?.lastSeen
-                    ? "Last seen " + formatMessageTime(chatUser.lastSeen)
-                    : "Offline"}
-            </p>
-          </div>
-        </div>
-
-        {/* RIGHT : THREE-DOTS MENU */}
-        <div ref={menuRef} className="relative">
-          <button
-            onClick={() => setShowMenu((prev) => !prev)}
-            className="p-2 rounded-full hover:bg-blue-100 text-blue-700 transition"
+                ? "text-green-400"
+                : "text-slate-400"
+            }`}
           >
-            <MoreVertical size={20} />
-          </button>
-
-          {showMenu && (
-            <div className="absolute right-0 mt-2 w-48 bg-white border border-blue-100 shadow-xl rounded-xl overflow-hidden animate-fadeIn z-30">
-
-              {/* VIEW PROFILE */}
-              <button
-                onClick={() => {
-                  alert("Profile popup goes here.");
-                  setShowMenu(false);
-                }}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 transition"
-              >
-                <User size={16} className="text-blue-500" />
-                View Profile
-              </button>
-
-              {/* BLOCK / UNBLOCK */}
-              <button
-                onClick={handleToggleBlock}
-                className={`flex items-center gap-3 px-4 py-2 text-sm transition 
-            ${isBlocked ? "text-blue-600 hover:bg-blue-50" : "text-red-500 hover:bg-red-50"}
-          `}
-              >
-                {isBlocked ? <Unlock size={16} /> : <Ban size={16} />}
-                {isBlocked ? "Unblock User" : "Block User"}
-              </button>
-
-              {/* UNFRIEND */}
-              <button
-                onClick={handleUnfriend}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 transition"
-              >
-                <Trash2 size={16} />
-                Unfriend
-              </button>
-
-              {/* SEARCH */}
-              <button
-                onClick={() => {
-                  setShowSearch(true);
-                  setShowMenu(false);
-                }}
-                className="flex items-center gap-3 px-4 py-2 text-sm hover:bg-blue-50 transition"
-              >
-                <Search size={16} className="text-blue-600" />
-                Search
-              </button>
-
-              {/* CLEAR CHAT */}
-              <button
-                onClick={handleClearChat}
-                className="flex items-center gap-3 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition"
-              >
-                <Trash2 size={16} />
-                Clear Chat
-              </button>
-            </div>
-          )}
+            {isBlocked
+              ? "You blocked this user"
+              : chatUser?.online
+              ? "Online"
+              : chatUser?.lastSeen
+              ? "Last seen " + formatMessageTime(chatUser.lastSeen)
+              : "Offline"}
+          </p>
         </div>
       </div>
 
+      {/* MENU */}
+      <div ref={menuRef} className="relative">
+        <button
+          onClick={() => setShowMenu((p) => !p)}
+          className="p-2 rounded-full hover:bg-white/10 transition"
+        >
+          <MoreVertical size={20} />
+        </button>
 
-      
-      
-      
-      <div
-        ref={listRef}
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-6 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent"
-      >
+        {showMenu && (
+          <div className="absolute right-0 mt-2 w-48
+            bg-slate-900/95 backdrop-blur-xl
+            border border-white/10
+            shadow-xl rounded-xl overflow-hidden z-30">
 
-        
-
-        {loading ? (
-          <div className="text-center text-xs text-gray-400 py-4">Loading...</div>
-        ) : visibleMessages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center text-gray-400 py-10">
-            <p>No messages yet</p>
+            <MenuItem icon={<User size={16} />} label="View Profile" />
+            <MenuItem
+              icon={isBlocked ? <Unlock size={16} /> : <Ban size={16} />}
+              label={isBlocked ? "Unblock User" : "Block User"}
+              danger={!isBlocked}
+              onClick={handleToggleBlock}
+            />
+            <MenuItem
+              icon={<Trash2 size={16} />}
+              label="Unfriend"
+              warning
+              onClick={handleUnfriend}
+            />
+            <MenuItem
+              icon={<Search size={16} />}
+              label="Search"
+              onClick={() => {
+                setShowSearch(true);
+                setShowMenu(false);
+              }}
+            />
+            <MenuItem
+              icon={<Trash2 size={16} />}
+              label="Clear Chat"
+              danger
+              onClick={handleClearChat}
+            />
           </div>
-        ) : (
-          groupMessagesByDate(visibleMessages).map(({ dateKey, messages }) => (
-            <div key={dateKey}>
-
-              {/* DATE SEPARATOR */}
-              <div className="flex justify-center mb-3">
-                <span className="text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full shadow-sm">
-                  {formatChatDate(dateKey)}
-                </span>
-              </div>
-
-              <div className="space-y-2">
-                {messages.map((msg) => (
-                  <Message
-                    key={msg._id}
-                    message={msg}
-                    isOwn={
-                      msg.sender?._id === currentUser._id ||
-                      msg.sender === currentUser._id
-                    }
-                    currentUser={currentUser}
-                    scrollRef={(el) => (messageRefs.current[msg._id] = el)}
-                    onOption={handleMessageOption}
-                    onScrollToMessage={scrollToMessage}
-                  />
-                ))}
-              </div>
-
-            </div>
-          ))
         )}
       </div>
+    </div>
 
-
-      {/* Typing Indicator */}
-      {!isBlocked && typingUsers.length > 0 && (
-        <div className="px-4 py-1 text-xs text-gray-500 bg-gray-50 border-t">
-          <TypingIndicator typingUsers={typingUsers} />
+    {/* ================= MESSAGE LIST ================= */}
+    <div
+      ref={listRef}
+      className="flex-1 overflow-y-auto px-4 py-4 space-y-6
+      scrollbar-thin scrollbar-thumb-white/20"
+    >
+      {loading ? (
+        <div className="text-center text-xs text-slate-400">Loading…</div>
+      ) : visibleMessages.length === 0 ? (
+        <div className="text-center text-slate-400 mt-20">
+          No messages yet
         </div>
-      )}
-
-      
-      {/* // PART 3 — INPUT BAR (Telegram Style) */}
-      
-
-      <div className="sticky bottom-0 bg-white/80 backdrop-blur-md border-t border-blue-100 shadow-lg p-3">
-
-        {isBlocked ? (
-          <div className="text-center text-sm text-gray-400 py-2">
-            You blocked this user. Unblock to chat again.
-          </div>
-        ) : (
-          <MessageInput
-            onSend={handleSend}
-            onTyping={handleTyping}
-            editingMessage={editingMessage}
-            replyTo={replyTo}
-            onCancelEdit={() => {
-              setEditingMessage(null);
-              setReplyTo(null);
-            }}
-            onCancelReply={() => setReplyTo(null)}
-            currentUser={currentUser}
-            className="rounded-2xl shadow-md bg-gray-100 border border-gray-200"
-          />
-        )}
-
-      </div>
-
-
-     
-     
-      
-      {/* // PART 4 — FORWARD MODAL + SEARCH UI */}
-      
-
-      {/* SEARCH OVERLAY */}
-      {showSearch && (
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-40 animate-fadeIn">
-          <div className="bg-white rounded-xl shadow-xl w-80 p-4 space-y-3">
-
-            {/* SEARCH INPUT */}
-            <div className="flex items-center bg-gray-100 rounded-full px-4 py-2">
-              <Search className="w-4 h-4 text-gray-500" />
-              <input
-                type="text"
-                placeholder="Search messages..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm px-2"
-              />
+      ) : (
+        groupMessagesByDate(visibleMessages).map(({ dateKey, messages }) => (
+          <div key={dateKey}>
+            {/* DATE */}
+            <div className="flex justify-center mb-4">
+              <span className="text-xs bg-white/10 text-slate-200 px-4 py-1 rounded-full">
+                {formatChatDate(dateKey)}
+              </span>
             </div>
 
-            {/* NAVIGATION FOR RESULTS */}
-            {searchResults.length > 0 && (
-              <div className="flex justify-between items-center text-xs text-gray-500">
-                <button
-                  className="px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300"
-                  onClick={() => handleSearchNavigate("prev")}
-                >
-                  Prev
-                </button>
-
-                <span>
-                  {currentSearchIndex + 1} / {searchResults.length}
-                </span>
-
-                <button
-                  className="px-2 py-1 rounded-md bg-gray-200 hover:bg-gray-300"
-                  onClick={() => handleSearchNavigate("next")}
-                >
-                  Next
-                </button>
-              </div>
-            )}
-
-            {/* CLOSE BUTTON */}
-            <button
-              onClick={() => setShowSearch(false)}
-              className="w-full py-2 text-sm bg-blue-600 text-white rounded-full hover:bg-blue-700 transition"
-            >
-              Close
-            </button>
+            <div className="space-y-2">
+              {messages.map((msg) => (
+                <Message
+                  key={msg._id}
+                  message={msg}
+                  isOwn={
+                    msg.sender?._id === currentUser._id ||
+                    msg.sender === currentUser._id
+                  }
+                  currentUser={currentUser}
+                  scrollRef={(el) =>
+                    (messageRefs.current[msg._id] = el)
+                  }
+                  onOption={handleMessageOption}
+                  onScrollToMessage={scrollToMessage}
+                />
+              ))}
+            </div>
           </div>
-        </div>
+        ))
       )}
+    </div>
 
-      {/* FORWARD MODAL */}
-      {showForwardModal && (
-        <ForwardModal
-          users={allUsers.filter((u) =>
-            (friendIds || []).some((id) => String(id) === String(u._id))
-          )}
-          excludeUserIds={[currentUser._id]}
-          onClose={() => setShowForwardModal(false)}
-          onForward={handleForwardToUsers}
+    {/* ================= TYPING ================= */}
+    {!isBlocked && typingUsers.length > 0 && (
+      <div className="px-4 py-1 text-xs text-slate-400 bg-white/5 border-t border-white/10">
+        <TypingIndicator typingUsers={typingUsers} />
+      </div>
+    )}
+
+    {/* ================= INPUT ================= */}
+    <div className="sticky bottom-0
+      bg-white/5 backdrop-blur-xl
+      border-t border-white/10
+      p-3">
+
+      {isBlocked ? (
+        <div className="text-center text-sm text-slate-400">
+          You blocked this user. Unblock to chat again.
+        </div>
+      ) : (
+        <MessageInput
+          onSend={handleSend}
+          onTyping={handleTyping}
+          editingMessage={editingMessage}
+          replyTo={replyTo}
+          onCancelEdit={() => {
+            setEditingMessage(null);
+            setReplyTo(null);
+          }}
+          onCancelReply={() => setReplyTo(null)}
+          currentUser={currentUser}
+          className="rounded-2xl bg-slate-800 border border-white/10"
         />
       )}
-
     </div>
-  );
+
+    {/* ================= SEARCH OVERLAY ================= */}
+    {showSearch && (
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm
+        flex items-center justify-center z-40">
+        <div className="bg-slate-900 border border-white/10 rounded-xl w-80 p-4">
+          <div className="flex items-center bg-white/10 rounded-full px-4 py-2">
+            <Search className="w-4 h-4 text-slate-400" />
+            <input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search messages…"
+              className="flex-1 bg-transparent outline-none text-sm px-2 text-white"
+            />
+          </div>
+
+          <button
+            onClick={() => setShowSearch(false)}
+            className="mt-4 w-full py-2 bg-indigo-600 hover:bg-indigo-500 rounded-full text-sm"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    )}
+
+    {/* FORWARD MODAL (unchanged) */}
+    {showForwardModal && (
+      <ForwardModal
+        users={allUsers.filter((u) =>
+          (friendIds || []).includes(u._id)
+        )}
+        excludeUserIds={[currentUser._id]}
+        onClose={() => setShowForwardModal(false)}
+        onForward={handleForwardToUsers}
+      />
+    )}
+  </div>
+);
+
 };
+const MenuItem = ({ icon, label, onClick, danger, warning }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-3 px-4 py-2 text-sm transition
+      ${
+        danger
+          ? "text-red-400 hover:bg-red-500/10"
+          : warning
+          ? "text-yellow-400 hover:bg-yellow-500/10"
+          : "hover:bg-white/10"
+      }
+    `}
+  >
+    {icon}
+    {label}
+  </button>
+);
 
 ChatWindow.propTypes = {
   chatId: PropTypes.string.isRequired,

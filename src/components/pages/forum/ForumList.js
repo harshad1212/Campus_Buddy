@@ -98,7 +98,7 @@ export default function ForumList() {
             onChange={(e) => setSelectedTag(e.target.value)}
             className="border border-white/20 rounded-xl bg-white/5 backdrop-blur px-4 py-2.5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
-            <option value="">All Tags</option>
+            <option value="" className="bg-slate-900 text-white">All Tags</option>
             {allTags.map((tag) => (
               <option key={tag} value={tag} className="bg-slate-900 text-white">
                 #{tag}
