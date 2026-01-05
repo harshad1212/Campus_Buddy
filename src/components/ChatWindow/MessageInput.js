@@ -248,7 +248,7 @@ const MessageInput = ({
           placeholder="Type a message…"
           className="flex-1 resize-none bg-transparent
             text-sm text-slate-200 placeholder-slate-400
-            focus:outline-none max-h-32"
+            focus:outline-none max-h-32 p-2"
           rows={1}
         />
 

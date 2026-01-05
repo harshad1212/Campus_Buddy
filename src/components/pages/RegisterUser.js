@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
 import { useNavigate, Link } from "react-router-dom";
-import "./css/AuthLayout.css";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 
@@ -135,84 +134,57 @@ const RegisterUser = () => {
   };
 
   return (
-    <div className="auth-wrapper">
-      <motion.div className="auth-card">
-        <h2 className="auth-title">Academic Registration</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-800 via-slate-800 to-indigo-950 px-4">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-2xl bg-white/10 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-8 text-slate-200"
+      >
+        <h2 className="text-3xl font-bold text-center text-white mb-6">
+          Academic Registration
+        </h2>
 
         {/* ROLE TOGGLE */}
-        <div className="role-toggle">
-          <button
-            type="button"
-            className={role === "student" ? "active" : ""}
-            onClick={() => setRole("student")}
-          >
-            Student
-          </button>
-          <button
-            type="button"
-            className={role === "teacher" ? "active" : ""}
-            onClick={() => setRole("teacher")}
-          >
-            Teacher
-          </button>
+        <div className="flex mb-6 bg-slate-900/60 rounded-full p-2 border border-white/10">
+          {["student", "teacher"].map((r) => (
+            <button
+              key={r}
+              type="button"
+              onClick={() => setRole(r)}
+              className={`flex-1 py-2 rounded-3xl font-medium transition-all ${
+                role === r
+                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-500/40"
+                    : "text-slate-400 hover:text-white"
+              }`}
+            >
+              {r.charAt(0).toUpperCase() + r.slice(1)}
+            </button>
+          ))}
         </div>
 
         {/* STEP INDICATOR */}
-        <div className="step-indicator">
-          <span className={step >= 1 ? "active" : ""}>1</span>
-          <span className={step >= 2 ? "active" : ""}>2</span>
-          <span className={step >= 3 ? "active" : ""}>3</span>
+        <div className="flex justify-center gap-2 mb-6">
+          {[1, 2, 3].map((s) => (
+            <span
+              key={s}
+              className={`w-3 h-3 rounded-full ${
+                step >= s ? "bg-indigo-500" : "bg-slate-600"
+              }`}
+            />
+          ))}
         </div>
 
-        <form
-          onSubmit={handleRegister}
-          encType="multipart/form-data"
-          className="auth-form"
-        >
+        <form onSubmit={handleRegister} encType="multipart/form-data" className="space-y-6">
           {/* ================= STEP 1 ================= */}
           {step === 1 && (
             <>
-              <div className="grid-2">
-                <input
-                  name="name"
-                  placeholder="Full Name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <input className="input" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} required />
+                <input className="input" name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} required />
+                <input className="input" name="password" type="password" placeholder="Password" value={formData.password} onChange={handleChange} required />
+                <input className="input" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} required />
 
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  name="password"
-                  type="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                />
-
-                <input
-                  name="phone"
-                  placeholder="Phone Number"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  required
-                />
-
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                  required
-                >
+                <select className="input" name="gender" value={formData.gender} onChange={handleChange} required>
                   <option value="">Select Gender</option>
                   <option>Male</option>
                   <option>Female</option>
@@ -220,14 +192,13 @@ const RegisterUser = () => {
 
                 <DatePicker
                   selected={formData.dob}
-                  onChange={(date) =>
-                    setFormData({ ...formData, dob: date })
-                  }
+                  onChange={(date) => setFormData({ ...formData, dob: date })}
                   placeholderText="Date of Birth"
+                  className="input"
                 />
               </div>
 
-              <button type="button" className="auth-btn" onClick={nextStep}>
+              <button type="button" onClick={nextStep} className="btn-primary">
                 Next
               </button>
             </>
@@ -236,96 +207,56 @@ const RegisterUser = () => {
           {/* ================= STEP 2 ================= */}
           {step === 2 && (
             <>
-              <div className="grid-2">
-                <select
-                  name="universityCode"
-                  value={formData.universityCode}
-                  onChange={handleChange}
-                  required
-                >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <select className="input" name="universityCode" value={formData.universityCode} onChange={handleChange} required>
                   <option value="">Select University</option>
                   {universities.map((u) => (
-                    <option key={u._id} value={u.code}>
-                      {u.name}
-                    </option>
+                    <option key={u._id} value={u.code}>{u.name}</option>
                   ))}
                 </select>
 
-                <select
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  required
-                >
+                <select className="input" name="department" value={formData.department} onChange={handleChange} required>
                   <option value="">Select Department</option>
                   {departments.map((d, i) => (
-                    <option key={i} value={d}>
-                      {d}
-                    </option>
+                    <option key={i} value={d}>{d}</option>
                   ))}
                 </select>
 
                 {role === "student" && (
-                  <select
-                    name="semester"
-                    value={formData.semester}
-                    onChange={handleChange}
-                    required
-                  >
+                  <select className="input" name="semester" value={formData.semester} onChange={handleChange} required>
                     <option value="">Select Semester</option>
                     {semesters.map((s, i) => (
-                      <option key={i} value={s}>
-                        {s}
-                      </option>
+                      <option key={i} value={s}>{s}</option>
                     ))}
                   </select>
                 )}
 
                 <input
+                  className="input"
                   name="registrationCode"
-                  placeholder={`${
-                    role === "student" ? "Student" : "Teacher"
-                  } Registration Code`}
+                  placeholder={`${role === "student" ? "Student" : "Teacher"} Registration Code`}
                   value={formData.registrationCode}
                   onChange={handleChange}
                   required
                 />
 
                 {role === "student" && (
-                  <input
-                    name="enrollmentNumber"
-                    placeholder="Enrollment Number"
-                    value={formData.enrollmentNumber}
-                    onChange={handleChange}
-                    required
-                  />
+                  <input className="input" name="enrollmentNumber" placeholder="Enrollment Number" value={formData.enrollmentNumber} onChange={handleChange} required />
                 )}
 
                 {role === "teacher" && (
                   <>
-                    <input
-                      name="employeeId"
-                      placeholder="Employee ID"
-                      value={formData.employeeId}
-                      onChange={handleChange}
-                      required
-                    />
-                    <input
-                      name="designation"
-                      placeholder="Designation"
-                      value={formData.designation}
-                      onChange={handleChange}
-                      required
-                    />
+                    <input className="input" name="employeeId" placeholder="Employee ID" value={formData.employeeId} onChange={handleChange} required />
+                    <input className="input" name="designation" placeholder="Designation" value={formData.designation} onChange={handleChange} required />
                   </>
                 )}
               </div>
 
-              <div className="step-buttons">
-                <button type="button" onClick={prevStep}>
+              <div className="flex justify-between">
+                <button type="button" onClick={prevStep} className="btn-secondary">
                   Back
                 </button>
-                <button type="button" onClick={nextStep}>
+                <button type="button" onClick={nextStep} className="btn-primary w-auto px-8">
                   Next
                 </button>
               </div>
@@ -335,47 +266,38 @@ const RegisterUser = () => {
           {/* ================= STEP 3 ================= */}
           {step === 3 && (
             <>
-              <input
-                type="file"
-                name="profilePhoto"
-                hidden
-                ref={fileInputRef}
-                accept="image/*"
-                onChange={handleChange}
-              />
+              <input type="file" hidden ref={fileInputRef} name="profilePhoto" accept="image/*" onChange={handleChange} />
 
               <div
-                className="custom-file-upload"
                 onClick={() => fileInputRef.current.click()}
+                className="cursor-pointer border border-dashed border-white/20 rounded-xl p-4 text-center hover:bg-white/5"
               >
-                <span>{fileName}</span>
-                <span className="browse-btn">Browse</span>
+                {fileName}
               </div>
 
               {preview && (
-                <div className="profile-preview">
-                  <img src={preview} alt="Preview" />
+                <div className="flex justify-center">
+                  <img src={preview} alt="Preview" className="w-24 h-24 rounded-full object-cover" />
                 </div>
               )}
 
-              <div className="step-buttons">
-                <button type="button" onClick={prevStep}>
+              <div className="flex justify-between">
+                <button type="button" onClick={prevStep} className="btn-secondary">
                   Back
                 </button>
-                <button className="auth-btn" disabled={loading}>
-                  {loading ? (
-                    <Loader2 className="animate-spin" />
-                  ) : (
-                    "Submit"
-                  )}
+                <button className="btn-primary" disabled={loading}>
+                  {loading ? <Loader2 className="animate-spin" /> : "Submit"}
                 </button>
               </div>
             </>
           )}
         </form>
 
-        <p className="auth-links">
-          Already registered? <Link to="/login">Login</Link>
+        <p className="text-center text-sm mt-6">
+          Already registered?{" "}
+          <Link to="/login" className="text-indigo-400 hover:underline">
+            Login
+          </Link>
         </p>
       </motion.div>
     </div>

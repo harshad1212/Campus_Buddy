@@ -8,7 +8,7 @@ import useSocket from "../../hooks/UseSocket";
 import { formatMessageTime } from "../../utils/time";
 import { MessageCircle, Loader2, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
+import Header from "./Header";
 const ChatPage = ({ currentUser }) => {
   const socketHook = useSocket(currentUser);
   const { socket, joinRoom } = socketHook;
@@ -218,6 +218,7 @@ const ChatPage = ({ currentUser }) => {
 
   return (
     <div className="h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200 overflow-hidden">
+      <Header />
       <div className="w-full h-full flex md:flex-row flex-col">
         {/* Sidebar */}
         <AnimatePresence initial={false}>
