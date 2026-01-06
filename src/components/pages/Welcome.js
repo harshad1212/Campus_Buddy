@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 
 const Welcome = () => {
   return (
-    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-800 via-slate-800 to-indigo-950 flex items-center justify-center px-4">
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 flex items-center justify-center px-4">
 
       {/* BACKGROUND BLOBS */}
       <motion.div
@@ -23,22 +23,23 @@ const Welcome = () => {
         transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* CARD */}
+      {/* MAIN CARD */}
       <motion.div
         className="
-          relative z-10
-          w-full max-w-md
+          relative z-10 my-10
+          w-full max-w-3xl
           bg-white/10 backdrop-blur-xl
           border border-white/10
           rounded-3xl shadow-2xl
-          p-10 text-center text-slate-200
+          p-12 text-center text-slate-200
         "
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
+        {/* BRAND */}
         <motion.h1
-          className="text-4xl font-extrabold text-white mb-3"
+          className="text-5xl font-extrabold text-white mb-4"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8 }}
@@ -47,24 +48,53 @@ const Welcome = () => {
         </motion.h1>
 
         <motion.p
-          className="text-slate-400 mb-8"
+          className="text-lg text-slate-300 mb-8 max-w-xl mx-auto"
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          Your smart campus companion.
+          A unified digital platform designed to connect students, teachers,
+          and university administration into one secure academic ecosystem.
         </motion.p>
 
+        {/* FEATURES PREVIEW */}
         <motion.div
-          initial={{ scale: 0.8, opacity: 0 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10 text-left"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          {[
+            ["🎓", "Student Collaboration", "Access notes, forums, events, and study groups"],
+            ["👨‍🏫", "Teacher Engagement", "Share resources, manage events, guide students"],
+            ["🏫", "University Management", "Admin-controlled access, departments, and users"],
+          ].map(([icon, title, desc]) => (
+            <div
+              key={title}
+              className="
+                bg-slate-900/60 border border-white/10
+                rounded-2xl p-5
+              "
+            >
+              <div className="text-3xl mb-3">{icon}</div>
+              <h3 className="font-semibold text-white mb-1">{title}</h3>
+              <p className="text-sm text-slate-400">{desc}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* CTA BUTTONS */}
+        <motion.div
+          className="flex flex-col sm:flex-row justify-center gap-4"
+          initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
+          transition={{ duration: 0.5, delay: 0.6 }}
         >
           <Link to="/login">
             <button
               className="
-                px-8 py-3 rounded-xl
-                bg-indigo-600 hover:bg-indigo-500
+                px-8 py-3 rounded-xl outlined-btn
+                hover:bg-indigo-500
                 text-white font-semibold text-lg
                 shadow-lg shadow-indigo-500/40
                 transition-all
@@ -74,6 +104,11 @@ const Welcome = () => {
             </button>
           </Link>
         </motion.div>
+
+        {/* FOOTER NOTE */}
+        <p className="text-xs text-slate-500 mt-8">
+          Secure • Role-based • University verified access
+        </p>
       </motion.div>
     </div>
   );

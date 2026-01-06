@@ -74,154 +74,183 @@ const RegisterUniversity = () => {
   };
 
   return (
-    <div className="relative py-10 min-h-screen overflow-hidden bg-gradient-to-br from-slate-800 via-slate-800 to-indigo-950 flex items-center justify-center px-4">
-
-      {/* BACKGROUND BLOBS */}
-      <motion.div
-        className="absolute -top-32 -left-32 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"
-        animate={{ x: [0, 40, -20], y: [0, 30, -10] }}
-        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="absolute top-1/3 -right-32 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"
-        animate={{ x: [0, -40, 20], y: [0, -30, 10] }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* CARD */}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-4">
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="
-          relative z-10 w-full max-w-2xl
+          w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10
           bg-white/10 backdrop-blur-xl
           border border-white/10
           rounded-3xl shadow-2xl
-          p-8 text-slate-200
+          p-10 text-slate-200
         "
       >
-        <h2 className="text-3xl font-bold text-center text-white mb-2">
-          Register Your University 🏫
-        </h2>
-        <p className="text-center text-slate-400 mb-6">
-          Create your university admin account
-        </p>
+        {/* ================= LEFT ADMIN INFO PANEL ================= */}
+        <div className="hidden md:flex flex-col justify-center space-y-6">
+          <h2 className="text-4xl font-bold text-white leading-tight">
+            Power Your University. One Control Panel.
+          </h2>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          {/* BASIC INFO */}
-          <div className="grid md:grid-cols-2 gap-4">
-            {[
-              ["universityName", "University Name"],
-              ["universityCode", "University Code"],
-              ["teacherCode", "Teacher Registration Code"],
-              ["studentCode", "Student Registration Code"],
-              ["email", "Admin Email", "email"],
-              ["password", "Admin Password", "password"],
-            ].map(([name, placeholder, type = "text"]) => (
-              <input
-                key={name}
-                type={type}
-                name={name}
-                placeholder={placeholder}
-                value={formData[name]}
-                onChange={handleChange}
-                required
-                className="
-                  w-full px-4 py-3 rounded-xl
-                  bg-slate-900/60 text-white
-                  border border-white/10
-                  focus:ring-2 focus:ring-indigo-500
-                  outline-none
-                "
-              />
-            ))}
-          </div>
+          <p className="text-slate-300 text-lg">
+            Campus Buddy enables universities to manage students, teachers,
+            departments, and academic collaboration securely from one platform.
+          </p>
 
-          {/* DEPARTMENTS */}
-          <div className="mt-4">
-            <p className="text-sm text-slate-300 mb-2 font-medium">
-              Departments
-            </p>
+          <ul className="space-y-4 text-slate-300">
+            <li className="flex gap-3">
+              <span className="text-indigo-400">✔</span>
+              Centralized university management
+            </li>
+            <li className="flex gap-3">
+              <span className="text-indigo-400">✔</span>
+              Role-based access for students & teachers
+            </li>
+            <li className="flex gap-3">
+              <span className="text-indigo-400">✔</span>
+              Secure registration & approval workflows
+            </li>
+            <li className="flex gap-3">
+              <span className="text-indigo-400">✔</span>
+              Department & academic structure control
+            </li>
+            <li className="flex gap-3">
+              <span className="text-indigo-400">✔</span>
+              Scalable platform for campus collaboration
+            </li>
+          </ul>
 
-            <div className="space-y-2">
-              {formData.departments.map((dept, index) => (
-                <div key={index} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder={`Department ${index + 1}`}
-                    value={dept}
-                    onChange={(e) =>
-                      handleDepartmentChange(index, e.target.value)
-                    }
-                    required
-                    className="
-                      flex-1 px-4 py-3 rounded-xl
-                      bg-slate-900/60 text-white
-                      border border-white/10
-                      focus:ring-2 focus:ring-indigo-500
-                      outline-none
-                    "
-                  />
-                  {formData.departments.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeDepartment(index)}
-                      className="
-                        px-3 rounded-xl
-                        bg-red-500/20 text-red-400
-                        hover:bg-red-500/30
-                      "
-                    >
-                      <Trash2 size={18} />
-                    </button>
-                  )}
-                </div>
+          <p className="text-sm text-slate-400 border-t border-white/10 pt-4">
+            Designed for university administrators & academic institutions
+          </p>
+        </div>
+
+        {/* ================= RIGHT FORM PANEL ================= */}
+        <div>
+          <h2 className="text-3xl font-bold text-center text-white mb-2">
+            Register Your University
+          </h2>
+          <p className="text-center text-slate-400 mb-6 text-sm">
+            Create a secure admin account to manage your campus
+          </p>
+
+          <form onSubmit={handleRegister} className="space-y-4">
+            {/* BASIC INFO */}
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                ["universityName", "University Name"],
+                ["universityCode", "University Code"],
+                ["teacherCode", "Teacher Registration Code"],
+                ["studentCode", "Student Registration Code"],
+                ["email", "Admin Email", "email"],
+                ["password", "Admin Password", "password"],
+              ].map(([name, placeholder, type = "text"]) => (
+                <input
+                  key={name}
+                  type={type}
+                  name={name}
+                  placeholder={placeholder}
+                  value={formData[name]}
+                  onChange={handleChange}
+                  required
+                  className="
+                    w-full px-4 py-3 rounded-xl
+                    bg-slate-900/60 text-white
+                    border border-white/10
+                    focus:ring-2 focus:ring-indigo-500
+                    outline-none
+                  "
+                />
               ))}
             </div>
 
+            {/* DEPARTMENTS */}
+            <div className="mt-4">
+              <p className="text-sm text-slate-300 mb-2 font-medium">
+                Academic Departments
+              </p>
+
+              <div className="space-y-2">
+                {formData.departments.map((dept, index) => (
+                  <div key={index} className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder={`Department ${index + 1}`}
+                      value={dept}
+                      onChange={(e) =>
+                        handleDepartmentChange(index, e.target.value)
+                      }
+                      required
+                      className="
+                        flex-1 px-4 py-3 rounded-xl
+                        bg-slate-900/60 text-white
+                        border border-white/10
+                        focus:ring-2 focus:ring-indigo-500
+                        outline-none
+                      "
+                    />
+                    {formData.departments.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeDepartment(index)}
+                        className="
+                          px-3 rounded-xl
+                          bg-red-500/20 text-red-400
+                          hover:bg-red-500/30
+                        "
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                type="button"
+                onClick={addDepartment}
+                className="
+                  mt-3 flex items-center gap-2
+                  text-indigo-400 hover:text-indigo-300
+                  text-sm font-medium
+                "
+              >
+                <Plus size={16} /> Add Department
+              </button>
+            </div>
+
+            {/* SUBMIT */}
             <button
-              type="button"
-              onClick={addDepartment}
+              type="submit"
+              disabled={loading}
               className="
-                mt-3 flex items-center gap-2
-                text-indigo-400 hover:text-indigo-300
-                text-sm font-medium
+                w-full mt-6 py-3 rounded-xl
+                bg-indigo-600 hover:bg-indigo-500
+                text-white font-semibold
+                flex items-center justify-center
+                transition-all disabled:opacity-60
               "
             >
-              <Plus size={16} /> Add Department
+              {loading ? (
+                <Loader2 className="animate-spin" size={20} />
+              ) : (
+                "Create University Workspace"
+              )}
             </button>
+          </form>
+
+          {/* FOOTER */}
+          <div className="mt-6 text-center text-sm text-slate-400">
+            Already registered?{" "}
+            <Link to="/admin-login" className="text-indigo-400 hover:underline">
+              Login as Admin
+            </Link>
           </div>
 
-          {/* SUBMIT */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="
-              w-full mt-6 py-3 rounded-xl
-              bg-indigo-600 hover:bg-indigo-500
-              text-white font-semibold
-              flex items-center justify-center
-              transition-all disabled:opacity-60
-            "
-          >
-            {loading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : (
-              "Register University"
-            )}
-          </button>
-        </form>
-
-        {/* FOOTER */}
-        <div className="mt-6 text-center text-sm text-slate-400">
-          Already registered?{" "}
-          <Link
-            to="/admin-login"
-            className="text-indigo-400 hover:underline"
-          >
-            Login as Admin
-          </Link>
+          <p className="text-center text-xs text-slate-500 mt-4">
+            Administrative access is restricted to authorized university officials
+          </p>
         </div>
       </motion.div>
     </div>
