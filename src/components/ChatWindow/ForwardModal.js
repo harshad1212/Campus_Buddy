@@ -26,103 +26,124 @@ const ForwardModal = ({ users, excludeUserIds = [], onClose, onForward }) => {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-white rounded-2xl shadow-2xl w-96 max-w-full p-6 animate-slideUp border border-gray-100">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold text-gray-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center
+      bg-black/60 backdrop-blur-md animate-fadeIn">
+
+      <div className="w-[420px] max-w-full
+        bg-slate-900/90 backdrop-blur-xl
+        border border-white/10
+        rounded-2xl shadow-2xl
+        p-5 animate-slideUp">
+
+        {/* HEADER */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-slate-100">
             Forward Message
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition"
+            className="p-1 rounded-full text-slate-400 hover:text-red-400 hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Search Bar */}
+        {/* SEARCH */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Search users..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm text-gray-700 outline-none"
+            className="w-full pl-9 pr-3 py-2 rounded-xl
+              bg-slate-800 text-slate-200 text-sm
+              border border-white/10
+              focus:outline-none focus:ring-1 focus:ring-indigo-400"
           />
         </div>
 
-        {/* User List */}
-        <div className="max-h-72 overflow-y-auto custom-scrollbar mb-5">
+        {/* USER LIST */}
+        <div className="max-h-72 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
           {filteredUsers.length === 0 ? (
-            <p className="text-gray-500 text-sm text-center py-6">
+            <div className="text-center text-slate-400 text-sm py-8">
               No users found
-            </p>
+            </div>
           ) : (
-            filteredUsers.map((user) => (
-              <div
-                key={user._id}
-                className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition ${
-                  selectedUsers.includes(user._id)
-                    ? "bg-blue-50 border border-blue-200"
-                    : "hover:bg-gray-50"
-                }`}
-                onClick={() => handleToggle(user._id)}
-              >
+            filteredUsers.map((user) => {
+              const selected = selectedUsers.includes(user._id);
+              return (
                 <div
-                  className={`w-5 h-5 border-2 rounded-md flex items-center justify-center transition-all ${
-                    selectedUsers.includes(user._id)
-                      ? "bg-blue-600 border-blue-600"
-                      : "border-gray-300 bg-white"
-                  }`}
+                  key={user._id}
+                  onClick={() => handleToggle(user._id)}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-xl cursor-pointer transition
+                    ${selected
+                      ? "bg-indigo-500/20 border border-indigo-400/30"
+                      : "hover:bg-white/5"
+                    }`}
                 >
-                  {selectedUsers.includes(user._id) && (
-                    <svg
-                      className="w-3 h-3 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
+                  {/* Checkbox */}
+                  <div
+                    className={`w-5 h-5 rounded-md border flex items-center justify-center
+                      ${selected
+                        ? "bg-indigo-500 border-indigo-500"
+                        : "border-white/20"
+                      }`}
+                  >
+                    {selected && (
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
+                  </div>
 
-                <img
-                  src={user.avatarUrl || "/default-avatar.png"}
-                  alt={user.name}
-                  className="w-9 h-9 rounded-full object-cover border border-gray-200"
-                />
-                <span className="text-gray-800 text-sm font-medium truncate">
-                  {user.name}
-                </span>
-              </div>
-            ))
+                  {/* Avatar */}
+                  <img
+                    src={user.avatarUrl || "/default-avatar.png"}
+                    alt={user.name}
+                    className="w-9 h-9 rounded-full object-cover border border-white/10"
+                  />
+
+                  {/* Name */}
+                  <span className="flex-1 text-sm text-slate-200 font-medium truncate">
+                    {user.name}
+                  </span>
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-end gap-3">
+        {/* ACTIONS */}
+        <div className="flex justify-end gap-3 mt-5">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-gray-200 text-gray-700 font-medium hover:bg-gray-300 transition text-sm"
+            className="px-4 py-2 rounded-xl text-sm font-medium
+              bg-slate-800 text-slate-300
+              hover:bg-slate-700 transition"
           >
             Cancel
           </button>
+
           <button
             onClick={handleForward}
             disabled={selectedUsers.length === 0}
-            className={`px-4 py-2 rounded-lg font-medium flex items-center gap-2 text-sm transition ${
-              selectedUsers.length > 0
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "bg-blue-300 text-white cursor-not-allowed"
-            }`}
+            className={`px-4 py-2 rounded-xl text-sm font-medium
+              flex items-center gap-2 transition
+              ${selectedUsers.length > 0
+                ? "bg-indigo-600 text-white hover:bg-indigo-700"
+                : "bg-indigo-600/40 text-white cursor-not-allowed"
+              }`}
           >
             <Send className="w-4 h-4" />
             Forward
@@ -130,26 +151,30 @@ const ForwardModal = ({ users, excludeUserIds = [], onClose, onForward }) => {
         </div>
       </div>
 
-      {/* Animations and Scrollbar */}
+      {/* Animations + Scrollbar */}
       <style>
         {`
           @keyframes fadeIn {
-            from {opacity: 0;}
-            to {opacity: 1;}
+            from { opacity: 0; }
+            to { opacity: 1; }
           }
-          .animate-fadeIn { animation: fadeIn 0.25s ease-in-out; }
+          .animate-fadeIn {
+            animation: fadeIn 0.25s ease-out;
+          }
 
           @keyframes slideUp {
-            from {transform: translateY(20px); opacity: 0;}
-            to {transform: translateY(0); opacity: 1;}
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
           }
-          .animate-slideUp { animation: slideUp 0.3s ease-out; }
+          .animate-slideUp {
+            animation: slideUp 0.3s ease-out;
+          }
 
           .custom-scrollbar::-webkit-scrollbar {
             width: 6px;
           }
           .custom-scrollbar::-webkit-scrollbar-thumb {
-            background-color: rgba(0, 0, 0, 0.15);
+            background: rgba(255,255,255,0.15);
             border-radius: 3px;
           }
         `}

@@ -100,7 +100,10 @@ const AdminDepartments = () => {
         pendingEventsCount={events.length}
         />
       <AdminHeader />
+<<<<<<< HEAD
         
+=======
+>>>>>>> 6f723b823ddcd0241811b0822301ccaaab54c000
 
       <main className="ml-64 p-6 bg-slate-100 min-h-screen">
         <h2 className="text-2xl font-bold mb-6">Departments</h2>

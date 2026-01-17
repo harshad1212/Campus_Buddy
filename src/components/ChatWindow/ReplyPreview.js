@@ -1,7 +1,7 @@
 import React from "react";
 import { X } from "lucide-react";
 
-// --- WhatsApp/Telegram style attachment previews
+/* ---------------- Attachment Preview ---------------- */
 const AttachmentPreview = ({ file, type }) => {
   const url = file.url || "";
 
@@ -11,70 +11,104 @@ const AttachmentPreview = ({ file, type }) => {
         <img
           src={url}
           alt="attachment"
-          className="w-12 h-12 object-cover rounded"
+          className="w-12 h-12 object-cover rounded-lg border border-white/10"
         />
       );
     case "video":
       return (
         <video
           src={url}
-          className="w-16 h-12 object-cover rounded"
+          className="w-16 h-12 object-cover rounded-lg border border-white/10"
           muted
-          controls={false}
         />
       );
     case "pdf":
       return (
-        <div className="w-16 h-12 bg-gray-200 text-gray-700 flex items-center justify-center text-xs rounded">
+        <div className="w-16 h-12 bg-slate-800 text-slate-200
+          flex items-center justify-center text-xs rounded-lg
+          border border-white/10">
           PDF
         </div>
       );
     default:
       return (
-        <div className="w-16 h-12 bg-gray-200 text-gray-700 flex items-center justify-center text-xs rounded">
+        <div className="w-16 h-12 bg-slate-800 text-slate-200
+          flex items-center justify-center text-xs rounded-lg
+          border border-white/10">
           File
         </div>
       );
   }
 };
 
+/* ---------------- Reply Preview ---------------- */
 const ReplyPreview = ({ replyTo, currentUser, onClose }) => {
   if (!replyTo) return null;
 
   const isOwn = replyTo.sender?._id === currentUser._id;
 
   return (
-    <div className="flex items-start bg-gray-100 border-l-4 border-blue-400 px-3 py-2 mb-1 rounded-t-sm shadow-sm relative max-w-full">
-      {/* Message content */}
-      <div className="flex-1 text-xs text-gray-700 space-y-1">
+    <div
+      className="relative flex items-start gap-2
+        bg-slate-900/80 backdrop-blur-xl
+        border-l-4 border-indigo-400
+        px-3 py-2 mb-2 rounded-lg
+        shadow-lg max-w-full"
+    >
+      {/* Content */}
+      <div className="flex-1 min-w-0 space-y-1">
         {/* Sender */}
-        <div className="font-semibold truncate">
+        <div className="text-xs font-semibold text-indigo-300 truncate">
           {isOwn ? "You" : replyTo.sender?.name}
         </div>
 
         {/* Text */}
         {replyTo.content && (
-          <div className="truncate text-gray-600">{replyTo.content}</div>
+          <div className="text-xs text-slate-300 truncate">
+            {replyTo.content}
+          </div>
         )}
 
         {/* Attachments */}
         {replyTo.attachments?.length > 0 && (
-          <div className="flex space-x-2 mt-1">
+          <div className="flex gap-2 mt-1">
             {replyTo.attachments.map((att, i) => {
               let type = "other";
-              if (att.type?.startsWith("image/") || att.url?.includes("/image/")) type = "image";
-              else if (att.type?.startsWith("video/") || att.url?.includes("/video/")) type = "video";
-              else if (att.type === "application/pdf" || att.url?.endsWith(".pdf")) type = "pdf";
-              return <AttachmentPreview key={i} file={att} type={type} />;
+              if (
+                att.type?.startsWith("image/") ||
+                att.url?.includes("/image/")
+              )
+                type = "image";
+              else if (
+                att.type?.startsWith("video/") ||
+                att.url?.includes("/video/")
+              )
+                type = "video";
+              else if (
+                att.type === "application/pdf" ||
+                att.url?.endsWith(".pdf")
+              )
+                type = "pdf";
+
+              return (
+                <AttachmentPreview
+                  key={i}
+                  file={att}
+                  type={type}
+                />
+              );
             })}
           </div>
         )}
       </div>
 
-      {/* Close button */}
+      {/* Close */}
       <button
         onClick={onClose}
-        className="ml-2 text-gray-500 hover:text-gray-700 absolute top-1 right-1"
+        title="Cancel reply"
+        className="absolute top-1 right-1 p-1
+          text-slate-400 hover:text-red-400
+          hover:bg-white/10 rounded-full transition"
       >
         <X className="w-4 h-4" />
       </button>
