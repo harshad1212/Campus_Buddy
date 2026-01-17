@@ -54,6 +54,7 @@ const Header = ({ setCurrentUser }) => {
             {/* ✅ Events Dropdown */}
             {/* ✅ Events Navigation */}
         
+              {console.log(user)}
             {user?.role === "teacher" ? (
               // 👩‍🏫 Teacher → Dropdown
               <div
