@@ -52,14 +52,8 @@ const Header = ({ setCurrentUser }) => {
               <DropdownLink to="/my-resources" text="My Resources" />
             </Dropdown>
 
-<<<<<<< HEAD
-            {/* ✅ Events Dropdown */}
-            {/* ✅ Events Navigation */}
         
               {console.log(user)}
-=======
-            {/* Events Dropdown */}
->>>>>>> 6f723b823ddcd0241811b0822301ccaaab54c000
             {user?.role === "teacher" ? (
               <Dropdown label="Events">
                 <DropdownLink to="/events" text="View Events" />
