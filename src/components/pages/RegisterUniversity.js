@@ -80,7 +80,7 @@ const RegisterUniversity = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="
-          w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10
+          w-full my-10 max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10
           bg-white/10 backdrop-blur-xl
           border border-white/10
           rounded-3xl shadow-2xl
