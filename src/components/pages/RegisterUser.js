@@ -229,7 +229,7 @@ const RegisterUser = () => {
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 
+        className="w-full my-10 max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-10 
                    bg-white/10 backdrop-blur-xl border border-white/10 
                    rounded-3xl shadow-2xl p-10 text-slate-200"
       >
@@ -359,139 +359,137 @@ const RegisterUser = () => {
             )}
 
             {/* ================= STEP 2 ================= */}
-            {/* ================= STEP 2: ACADEMIC DETAILS ================= */}
-{/* ================= STEP 2: ACADEMIC DETAILS ================= */}
-{step === 2 && (
-  <motion.div 
-    initial={{ x: 20, opacity: 0 }} 
-    animate={{ x: 0, opacity: 1 }} 
-    className="space-y-6" // Matches the vertical spacing of Step 1
-  >
-    {/* Grid container ensures proper horizontal alignment and margins */}
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      
-      {/* University Selection */}
-      <InputWrapper name="universityCode" errors={errors} touched={touched} formData={formData}>
-        <select 
-          className={`input w-full ${errors.universityCode && touched.universityCode ? 'border-red-500' : ''}`}
-          name="universityCode" 
-          onChange={handleChange} 
-          onBlur={handleBlur}
-          value={formData.universityCode}
-        >
-          <option value="">Select University</option>
-          {universities.map((u) => (
-            <option key={u._id} value={u.code}>{u.name}</option>
-          ))}
-        </select>
-      </InputWrapper>
+              {step === 2 && (
+                <motion.div 
+                  initial={{ x: 20, opacity: 0 }} 
+                  animate={{ x: 0, opacity: 1 }} 
+                  className="space-y-6" // Matches the vertical spacing of Step 1
+                >
+                  {/* Grid container ensures proper horizontal alignment and margins */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* University Selection */}
+                    <InputWrapper name="universityCode" errors={errors} touched={touched} formData={formData}>
+                      <select 
+                        className={`input w-full ${errors.universityCode && touched.universityCode ? 'border-red-500' : ''}`}
+                        name="universityCode" 
+                        onChange={handleChange} 
+                        onBlur={handleBlur}
+                        value={formData.universityCode}
+                      >
+                        <option value="">Select University</option>
+                        {universities.map((u) => (
+                          <option key={u._id} value={u.code}>{u.name}</option>
+                        ))}
+                      </select>
+                    </InputWrapper>
 
-      {/* Department Selection */}
-      <InputWrapper name="department" errors={errors} touched={touched} formData={formData}>
-        <select 
-          className={`input w-full ${errors.department && touched.department ? 'border-red-500' : ''}`}
-          name="department" 
-          onChange={handleChange} 
-          onBlur={handleBlur}
-          value={formData.department}
-          disabled={!formData.universityCode}
-        >
-          <option value="">Select Department</option>
-          {departments.map((d, i) => (
-            <option key={i} value={d}>{d}</option>
-          ))}
-        </select>
-      </InputWrapper>
+                    {/* Department Selection */}
+                    <InputWrapper name="department" errors={errors} touched={touched} formData={formData}>
+                      <select 
+                        className={`input w-full ${errors.department && touched.department ? 'border-red-500' : ''}`}
+                        name="department" 
+                        onChange={handleChange} 
+                        onBlur={handleBlur}
+                        value={formData.department}
+                        disabled={!formData.universityCode}
+                      >
+                        <option value="">Select Department</option>
+                        {departments.map((d, i) => (
+                          <option key={i} value={d}>{d}</option>
+                        ))}
+                      </select>
+                    </InputWrapper>
 
-      {/* Semester Selection (Students Only) */}
-      {role === "student" && (
-        <InputWrapper name="semester" errors={errors} touched={touched} formData={formData}>
-          <select 
-            className={`input w-full ${errors.semester && touched.semester ? 'border-red-500' : ''}`}
-            name="semester" 
-            onChange={handleChange} 
-            onBlur={handleBlur}
-            value={formData.semester}
-            disabled={!formData.department}
-          >
-            <option value="">Select Semester</option>
-            {semesters.map((s, i) => (
-              <option key={i} value={s}>{s}</option>
-            ))}
-          </select>
-        </InputWrapper>
-      )}
+                    {/* Semester Selection (Students Only) */}
+                    {role === "student" && (
+                      <InputWrapper name="semester" errors={errors} touched={touched} formData={formData}>
+                        <select 
+                          className={`input w-full ${errors.semester && touched.semester ? 'border-red-500' : ''}`}
+                          name="semester" 
+                          onChange={handleChange} 
+                          onBlur={handleBlur}
+                          value={formData.semester}
+                          disabled={!formData.department}
+                        >
+                          <option value="">Select Semester</option>
+                          {semesters.map((s, i) => (
+                            <option key={i} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </InputWrapper>
+                    )}
 
-      {/* Registration Code */}
-      <InputWrapper name="registrationCode" errors={errors} touched={touched} formData={formData}>
-        <input
-          className={`input w-full ${errors.registrationCode && touched.registrationCode ? 'border-red-500' : ''}`}
-          name="registrationCode"
-          placeholder={`${role === "student" ? "Student" : "Teacher"} Registration Code`}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          value={formData.registrationCode}
-        />
-      </InputWrapper>
+                    {/* Registration Code */}
+                    <InputWrapper name="registrationCode" errors={errors} touched={touched} formData={formData}>
+                      <input
+                        className={`input w-full ${errors.registrationCode && touched.registrationCode ? 'border-red-500' : ''}`}
+                        name="registrationCode"
+                        placeholder={`${role === "student" ? "Student" : "Teacher"} Registration Code`}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        value={formData.registrationCode}
+                      />
+                    </InputWrapper>
 
-      {/* Role Specific Fields */}
-      {role === "student" ? (
-        <InputWrapper name="enrollmentNumber" errors={errors} touched={touched} formData={formData}>
-          <input 
-            className={`input w-full ${errors.enrollmentNumber && touched.enrollmentNumber ? 'border-red-500' : ''}`}
-            name="enrollmentNumber" 
-            placeholder="Enrollment Number" 
-            onChange={handleChange} 
-            onBlur={handleBlur}
-            value={formData.enrollmentNumber}
-          />
-        </InputWrapper>
-      ) : (
-        <>
-          <InputWrapper name="employeeId" errors={errors} touched={touched} formData={formData}>
-            <input 
-              className="input w-full"
-              name="employeeId" 
-              placeholder="Employee ID" 
-              onChange={handleChange} 
-              onBlur={handleBlur}
-              value={formData.employeeId}
-            />
-          </InputWrapper>
-          <InputWrapper name="designation" errors={errors} touched={touched} formData={formData}>
-            <input 
-              className="input w-full"
-              name="designation" 
-              placeholder="Designation" 
-              onChange={handleChange} 
-              onBlur={handleBlur}
-              value={formData.designation}
-            />
-          </InputWrapper>
-        </>
-      )}
-    </div>
+                    {/* Role Specific Fields */}
+                    {role === "student" ? (
+                      <InputWrapper name="enrollmentNumber" errors={errors} touched={touched} formData={formData}>
+                        <input 
+                          className={`input w-full ${errors.enrollmentNumber && touched.enrollmentNumber ? 'border-red-500' : ''}`}
+                          name="enrollmentNumber" 
+                          placeholder="Enrollment Number" 
+                          onChange={handleChange} 
+                          onBlur={handleBlur}
+                          value={formData.enrollmentNumber}
+                        />
+                      </InputWrapper>
+                    ) : (
+                      <>
+                        <InputWrapper name="employeeId" errors={errors} touched={touched} formData={formData}>
+                          <input 
+                            className="input w-full"
+                            name="employeeId" 
+                            placeholder="Employee ID" 
+                            onChange={handleChange} 
+                            onBlur={handleBlur}
+                            value={formData.employeeId}
+                          />
+                        </InputWrapper>
+                        <InputWrapper name="designation" errors={errors} touched={touched} formData={formData}>
+                          <input 
+                            className="input w-full"
+                            name="designation" 
+                            placeholder="Designation" 
+                            onChange={handleChange} 
+                            onBlur={handleBlur}
+                            value={formData.designation}
+                          />
+                        </InputWrapper>
+                      </>
+                    )}
+                  </div>
 
-    {/* Action Buttons with Step 1 margins */}
-    <div className="flex justify-between gap-4 pt-4">
-      <button 
-        type="button" 
-        onClick={prevStep} 
-        className="btn-secondary flex-1"
-      >
-        Back
-      </button>
-      <button 
-        type="button" 
-        disabled={!isStepValid()} 
-        onClick={nextStep} 
-        className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        Continue
-      </button>
-    </div>
-  </motion.div>
-)}
+                  {/* Action Buttons with Step 1 margins */}
+                  <div className="flex justify-between gap-4 pt-4">
+                    <button 
+                      type="button" 
+                      onClick={prevStep} 
+                      className="btn-secondary flex-1"
+                    >
+                      Back
+                    </button>
+                    <button 
+                      type="button" 
+                      disabled={!isStepValid()} 
+                      onClick={nextStep} 
+                      className="btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Continue
+                    </button>
+                  </div>
+                </motion.div>
+              )}
 
             {/* ================= STEP 3 ================= */}
             {step === 3 && (
