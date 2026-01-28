@@ -152,6 +152,17 @@ const ChatPage = ({ currentUser }) => {
     socket.on("room-upsert", onRoomsUpdate);
     socket.on("user-list", onUserList);
     socket.on("presence", onPresence);
+    socket.on("presence:bulk", (list) => {
+  setUsers((prev) =>
+    prev.map((u) => {
+      const match = list.find((p) => p._id === u._id);
+      return match
+        ? { ...u, online: match.isOnline, lastSeen: match.lastSeen }
+        : u;
+    })
+  );
+});
+
 
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
