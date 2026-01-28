@@ -33,9 +33,13 @@ import AdminEventApprovals from "./components/admin/AdminEventApprovals";
 
 function App() {
   // For demo purposes, store logged-in user here
-  const [currentUser, setCurrentUser] = useState(() => {
-  const stored = localStorage.getItem("user");
-  return stored ? JSON.parse(stored) : null;
+  const [currentUser, setCurrentUser] = React.useState(() => {
+  try {
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
 });
 
 
