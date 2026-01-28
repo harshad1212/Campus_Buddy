@@ -50,7 +50,6 @@ function App() {
   setAuthLoading(false);
 }, []);
 
-
   return (
     <Router>
       <Routes>
