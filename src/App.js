@@ -1,5 +1,5 @@
-import React, { useState , useEffect } from 'react';
-import { HashRouter  as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import Welcome from './components/pages/Welcome';
 import Login from './components/pages/Login';
@@ -35,6 +35,7 @@ function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
+
   useEffect(() => {
   const storedUser = localStorage.getItem("user");
 
