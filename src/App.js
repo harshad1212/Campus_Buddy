@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 import Welcome from './components/pages/Welcome';
@@ -34,6 +34,21 @@ import AdminEventApprovals from "./components/admin/AdminEventApprovals";
 function App() {
   // For demo purposes, store logged-in user here
   const [currentUser, setCurrentUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  useEffect(() => {
+  const storedUser = localStorage.getItem("user");
+
+  if (storedUser) {
+    try {
+      setCurrentUser(JSON.parse(storedUser));
+    } catch {
+      localStorage.removeItem("user");
+    }
+  }
+
+  setAuthLoading(false);
+}, []);
+
 
   return (
     <Router>
@@ -46,7 +61,20 @@ function App() {
         <Route path="/about" element={<AboutUs />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/chat/*" element={currentUser ? <ChatPage currentUser={currentUser} /> : <Navigate to="/login" replace />} />
+<Route
+  path="/chat/*"
+  element={
+    authLoading ? (
+      <div className="h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    ) : currentUser ? (
+      <ChatPage currentUser={currentUser} />
+    ) : (
+      <Navigate to="/login" replace />
+    )
+  }
+/>
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/upload-resources" element={<UploadResources />} />
         <Route path="/see-resources" element={<SeeResources />} />
