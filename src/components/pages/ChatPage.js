@@ -24,6 +24,7 @@ const ChatPage = ({ currentUser }) => {
     blocked: [],
   });
   const [loading, setLoading] = useState(true);
+  
   const [isMobileView, setIsMobileView] = useState(
     typeof window !== "undefined" ? window.innerWidth < 768 : true
   );
@@ -38,6 +39,17 @@ const ChatPage = ({ currentUser }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+  useEffect(() => {
+  const cached = localStorage.getItem("chat_users");
+  if (cached) setUsers(JSON.parse(cached));
+}, []);
+useEffect(() => {
+  if (users.length > 0) {
+    localStorage.setItem("chat_users", JSON.stringify(users));
+  }
+}, [users]);
+
+
 
   /* =========================
      Notifications
@@ -55,25 +67,52 @@ const ChatPage = ({ currentUser }) => {
      Fetch Initial Data
   ========================= */
   async function fetchInitialData() {
-    if (!currentUser?.token) return;
+    if (!currentUser?.token) {
+    setLoading(false);   // ✅ IMPORTANT
+    
+    return;
+  }
     setLoading(true);
+
 
     try {
       const [roomsRes, usersRes] = await Promise.all([
         fetch(`${apiBase}/api/rooms`, {
-          headers: { Authorization: `Bearer ${currentUser.token}` },
-        }),
+  headers: {
+    Authorization: `Bearer ${currentUser.token}`,
+    "Cache-Control": "no-cache",
+  },
+}),
+
         fetch(`${apiBase}/api/users`, {
-          headers: { Authorization: `Bearer ${currentUser.token}` },
-        }),
+  headers: {
+    Authorization: `Bearer ${currentUser.token}`,
+    "Cache-Control": "no-cache",
+  },
+}),
+
       ]);
+
+      if (roomsRes.status === 304 || usersRes.status === 304) {
+        // Cached response but state was reset — force refetch
+        await fetchInitialData();
+        return;
+      }
 
       const roomsData = await roomsRes.json();
       const usersDataRaw = await usersRes.json();
 
+
       setRooms(Array.isArray(roomsData) ? roomsData : roomsData.rooms || []);
       const usersList = usersDataRaw.users || [];
-      setUsers(usersList.map((u) => ({ ...u, unreadCount: 0 })));
+      setUsers(
+  usersList.map((u) => ({
+    ...u,
+    unreadCount: 0,
+    universityId: u.universityId?.toString(), // ✅ normalize
+  }))
+);
+
 
       setFriendData({
         friends: usersDataRaw.currentUserFriends || [],
@@ -89,9 +128,13 @@ const ChatPage = ({ currentUser }) => {
   }
 
   useEffect(() => {
-    fetchInitialData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser]);
+  if (!currentUser) {
+    setLoading(false);
+    return;
+  }
+  fetchInitialData();
+}, [currentUser]);
+
 
   /* =========================
      Visibility Refresh
@@ -126,47 +169,40 @@ const ChatPage = ({ currentUser }) => {
       });
     };
 
-    const onUserList = (list) => {
-      const sameUniversity = list.filter(
-        (u) => u.universityId === currentUser.universityId
-      );
-      const unique = Array.from(
-        new Map(sameUniversity.map((u) => [u._id, u])).values()
-      );
-      setUsers((prev) =>
-        unique.map((u) => {
-          const existing = prev.find((p) => p._id === u._id);
-          return { ...u, unreadCount: existing?.unreadCount || 0 };
-        })
-      );
-    };
+  
 
     const onPresence = ({ userId, online, lastSeen }) => {
-      setUsers((prev) =>
-        prev.map((u) =>
-          u._id === userId ? { ...u, online, lastSeen } : u
-        )
-      );
-    };
+  setUsers((prev) => {
+    if (!prev || prev.length === 0) return prev;
+    return prev.map((u) =>
+      u._id === userId ? { ...u, online, lastSeen } : u
+    );
+  });
+};
+
 
     socket.on("room-upsert", onRoomsUpdate);
-    socket.on("user-list", onUserList);
     socket.on("presence", onPresence);
     socket.on("presence:bulk", (list) => {
-  setUsers((prev) =>
-    prev.map((u) => {
+  setUsers((prev) => {
+    if (!prev || prev.length === 0) return prev;
+
+    return prev.map((u) => {
       const match = list.find((p) => p._id === u._id);
       return match
-        ? { ...u, online: match.isOnline, lastSeen: match.lastSeen }
-        : u;
-    })
-  );
-});
+  ? {
+      ...u,
+      online: match.isOnline ?? match.online ?? false,
+      lastSeen: match.lastSeen,
+    }
+  : u;
 
+    });
+  });
+});
 
     return () => {
       socket.off("room-upsert", onRoomsUpdate);
-      socket.off("user-list", onUserList);
       socket.off("presence", onPresence);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -252,10 +288,10 @@ const ChatPage = ({ currentUser }) => {
                   <h2 className="text-sm font-semibold text-white truncate">
                     {currentUser.name}
                   </h2>
-                  <OnlineStatus
+                  {/* <OnlineStatus
                     user={{ ...currentUser, online: true }}
                     small
-                  />
+                  /> */}
                 </div>
               </div>
 
@@ -266,6 +302,7 @@ const ChatPage = ({ currentUser }) => {
                     <span className="text-sm">Loading chats...</span>
                   </div>
                 ) : (
+                  
                   <UsersList
                     users={users}
                     currentUserId={currentUser._id}

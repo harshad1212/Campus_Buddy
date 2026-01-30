@@ -20,7 +20,6 @@ const Login = ({ setCurrentUser }) => {
     if (savedUser) {
       const userData = JSON.parse(savedUser);
       setCurrentUser(userData);
-      
       navigate("/home", { replace: true });
     }
   }, [navigate, setCurrentUser]);

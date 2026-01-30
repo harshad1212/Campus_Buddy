@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import PropTypes from "prop-types";
 import { Search, UserPlus, XCircle, Check, Clock, Users } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Cookies from "js-cookie";
+
 
 /* ================= USER ROW ================= */
 const UserRow = ({
@@ -137,9 +139,21 @@ const UsersList = ({
   const [localUsers, setLocalUsers] = useState([]);
   const [viewMode, setViewMode] = useState("friends");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [initialized, setInitialized] = useState(false);
+
 
   const menuRef = useRef(null);
   const apiBase = process.env.REACT_APP_API_URL || "http://localhost:4000";
+ useEffect(() => {
+  if (!initialized && friendData) {
+    if (friendData.friends && friendData.friends.length > 0) {
+      setViewMode("friends"); // ✅ user has friends
+    } else {
+      setViewMode("all"); // ✅ no friends
+    }
+    setInitialized(true);
+  }
+}, [friendData, initialized]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -151,7 +165,11 @@ const UsersList = ({
   }, []);
 
   useEffect(() => {
-    const matchesUni = (u) => u.universityId === currentUserUniversityId;
+const matchesUni = (u) => {
+  if (!currentUserUniversityId) return true;
+  return String(u.universityId) === String(currentUserUniversityId);
+};
+
     const transform = (u) => ({
       ...u,
       isFriend: friendData?.friends?.includes(u._id),
@@ -174,12 +192,27 @@ const UsersList = ({
         .map(transform);
     } else {
       const filters = {
-        all: (u) => u._id !== currentUserId && matchesUni(u),
-        friends: (u) => friendData?.friends?.includes(u._id),
-        received: (u) => friendData?.received?.includes(u._id),
-        sent: (u) => friendData?.sent?.includes(u._id),
-        blocked: (u) => friendData?.blocked?.includes(u._id),
-      };
+  all: (u) =>
+    u._id !== currentUserId &&
+    matchesUni(u),
+
+  friends: (u) =>
+    friendData?.friends?.includes(u._id) &&
+    matchesUni(u),
+
+  received: (u) =>
+    friendData?.received?.includes(u._id) &&
+    matchesUni(u),
+
+  sent: (u) =>
+    friendData?.sent?.includes(u._id) &&
+    matchesUni(u),
+
+  blocked: (u) =>
+    friendData?.blocked?.includes(u._id) &&
+    matchesUni(u),
+};
+
       list = users.filter(filters[viewMode]).map(transform);
     }
 
@@ -194,18 +227,50 @@ const UsersList = ({
   ]);
 
   const perform = async (url, method = "POST") => {
-    try {
-      const res = await fetch(`${apiBase}${url}`, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok) return alert(data.error);
-      refreshUsers();
-    } catch (err) {
-      console.error(err);
+  const savedUser = Cookies.get("chatUser");
+  if (!savedUser) {
+    alert("Session expired. Please login again.");
+    return;
+  }
+
+  const { token } = JSON.parse(savedUser);
+
+  try {
+    const res = await fetch(`${apiBase}${url}`, {
+      method,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.error || "Action failed");
+      return;
     }
-  };
+
+    // ✅ SUCCESS FEEDBACK
+    if (url.includes("/send-request")) {
+      alert("✅ Friend request sent successfully");
+    } else if (url.includes("/accept-request")) {
+      alert("✅ Friend request accepted");
+    } else if (url.includes("/cancel-request")) {
+      alert("Request canceled");
+    } else if (url.includes("/reject-request")) {
+      alert("Request rejected");
+    } else if (url.includes("/unblock")) {
+      alert("User unblocked");
+    }
+
+    refreshUsers();
+  } catch (err) {
+    console.error(err);
+    alert("Network error");
+  }
+};
+
+
 
   return (
     <div className="flex flex-col h-full bg-slate-900 border-r border-white/10">
@@ -291,37 +356,44 @@ const UsersList = ({
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
-        {localUsers.length === 0 ? (
-          <div className="text-sm text-slate-400 text-center mt-10">
-            No users found
-          </div>
-        ) : (
-          localUsers.map((user) => (
-            <UserRow
-              key={user._id}
-              user={user}
-              onClick={() =>
-                user.isFriend && !user.isBlocked && onStartPrivateChat(user)
-              }
-              onAddFriend={(u) =>
-                perform(`/api/friends/send-request/${u._id}`)
-              }
-              onCancelRequest={(u) =>
-                perform(`/api/friends/cancel-request/${u._id}`, "DELETE")
-              }
-              onAcceptRequest={(u) =>
-                perform(`/api/friends/accept-request/${u._id}`)
-              }
-              onRejectRequest={(u) =>
-                perform(`/api/friends/reject-request/${u._id}`)
-              }
-              onUnblockUser={(u) =>
-                perform(`/api/friends/unblock/${u._id}`, "DELETE")
-              }
-            />
-          ))
-        )}
+  {localUsers.length === 0 ? (
+    viewMode === "friends" ? (
+      <div className="text-sm text-slate-400 text-center mt-10">
+        No friends yet — add someone to start chatting 🙂
       </div>
+    ) : (
+      <div className="text-sm text-slate-400 text-center mt-10">
+        No users found
+      </div>
+    )
+  ) : (
+    localUsers.map((user) => (
+      <UserRow
+        key={user._id}
+        user={user}
+        onClick={() =>
+          user.isFriend && !user.isBlocked && onStartPrivateChat(user)
+        }
+        onAddFriend={(u) =>
+          perform(`/api/friends/send-request/${u._id}`)
+        }
+        onCancelRequest={(u) =>
+          perform(`/api/friends/cancel-request/${u._id}`, "DELETE")
+        }
+        onAcceptRequest={(u) =>
+          perform(`/api/friends/accept-request/${u._id}`)
+        }
+        onRejectRequest={(u) =>
+          perform(`/api/friends/reject-request/${u._id}`)
+        }
+        onUnblockUser={(u) =>
+          perform(`/api/friends/unblock/${u._id}`, "DELETE")
+        }
+      />
+    ))
+  )}
+</div>
+
     </div>
   );
 };
@@ -329,7 +401,7 @@ const UsersList = ({
 UsersList.propTypes = {
   users: PropTypes.array.isRequired,
   currentUserId: PropTypes.string.isRequired,
-  currentUserUniversityId: PropTypes.string.isRequired,
+  currentUserUniversityId: PropTypes.string,
   onStartPrivateChat: PropTypes.func.isRequired,
   token: PropTypes.string.isRequired,
   friendData: PropTypes.object,
