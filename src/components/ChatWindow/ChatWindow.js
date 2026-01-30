@@ -660,8 +660,9 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], frie
     {/* ================= MESSAGE LIST ================= */}
     <div
       ref={listRef}
-      className="flex-1 overflow-y-auto px-4 py-4 space-y-6
+      className="flex-1 overflow-y-auto px-4 py-4  space-y-6
       scrollbar-thin scrollbar-thumb-white/20"
+      style={{ marginBottom: "50px" }}
     >
       {loading ? (
         <div className="text-center text-xs text-slate-400">Loading…</div>
@@ -708,7 +709,6 @@ const ChatWindow = ({ chatId, socket, currentUser, chatUser, allUsers = [], frie
         <TypingIndicator typingUsers={typingUsers} />
       </div>
     )}
-
     {/* ================= INPUT ================= */}
     <div className="sticky bottom-0
       bg-white/5 backdrop-blur-xl
