@@ -138,19 +138,21 @@ const RegisterUser = () => {
       case "universityCode":
       case "department":
       case "gender":
-      case "dob":
-      if (!value) {
-        error = "Date of birth is required";
-      } else if (!isAtLeast15YearsOld(value)) {
-        error = "Minimum age must be 15 years";
-      }
-      break;
+      
 
       case "registrationCode":
         if (!value) error = "This field is required";
         break;
+      case "dob":
+      if (!value) {
+        error = "Date of birth is required";
+      } else if (!isAtLeast15YearsOld(value)) {
+        error = "Date of birth invalid";
+      }
+      break;
       default:
         break;
+
     }
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
