@@ -139,6 +139,13 @@ const RegisterUser = () => {
       case "department":
       case "gender":
       case "dob":
+      if (!value) {
+        error = "Date of birth is required";
+      } else if (!isAtLeast15YearsOld(value)) {
+        error = "Minimum age must be 15 years";
+      }
+      break;
+
       case "registrationCode":
         if (!value) error = "This field is required";
         break;
@@ -147,6 +154,23 @@ const RegisterUser = () => {
     }
     setErrors((prev) => ({ ...prev, [name]: error }));
   };
+  const isAtLeast15YearsOld = (dob) => {
+  const today = new Date();
+  const birthDate = new Date(dob);
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
+    age--;
+  }
+
+  return age >= 15;
+};
+
 
   /* ================= HANDLE CHANGE ================= */
   const handleChange = (e) => {
@@ -186,6 +210,10 @@ const RegisterUser = () => {
   /* ================= SUBMIT ================= */
   const handleRegister = async (e) => {
     e.preventDefault();
+     if (!isAtLeast15YearsOld(formData.dob)) {
+    alert("Minimum age required is 15 years");
+    return;
+  }
     setLoading(true);
 
     try {
@@ -341,16 +369,17 @@ const RegisterUser = () => {
                 </InputWrapper>
                 <InputWrapper name="dob" errors={errors} touched={touched} formData={formData}>
                   <DatePicker
-                    placeholderText="DOB"
-                    className="input w-full"
-                    selected={formData.dob}
-                    onChange={(date) => {
-                        setFormData(p => ({...p, dob: date}));
-                        setTouched(p => ({...p, dob: true}));
-                        validateField("dob", date);
-                    }}
-                    maxDate={new Date()}
-                  />
+  placeholderText="Date of Birth"
+  className="input w-full"
+  selected={formData.dob}
+  onChange={(date) => {
+    setFormData((p) => ({ ...p, dob: date }));
+    setTouched((p) => ({ ...p, dob: true }));
+    validateField("dob", date);
+  }}
+  maxDate={new Date()}
+/>
+
                 </InputWrapper>
                 <button type="button" disabled={!isStepValid()} onClick={() => setStep(2)} className="btn-primary col-span-full py-3 disabled:opacity-50 disabled:cursor-not-allowed">
                   Next Step
