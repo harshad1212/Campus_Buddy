@@ -66,7 +66,7 @@ const UploadResources = () => {
       toast.error("Upload failed");
     }
   };
-
+console.log("UploadResources rendered");
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 text-slate-200">
       <Header />
