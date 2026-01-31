@@ -133,7 +133,7 @@ const RegisterUser = () => {
         if (value.length < 6) error = "Min 6 characters required";
         break;
       case "phone":
-        if (!value.match(/^\d{10}$/)) error = "Phone number must be 10 digits";
+        if (!value.match(/^\d{10}$/)) error = "Phone number must contain exactly 10 digits (numbers only)";
         break;
       case "universityCode":
       case "department":
